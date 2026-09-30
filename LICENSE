@@ -1,0 +1,36 @@
+﻿MIT License
+
+Copyright (c) 2026 5garashi.com設計事務所 / 5garashi.com Design Office
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+注記 / Note
+
+このMIT Licenseは本リポジトリのソースコードに適用されます。気象データ、天気図
+画像、背景地図の利用条件は各配信元の規約に従います（READMEの第4条・第6条）。
+5garashi.com設計事務所のシンボルマーク、ロゴタイプ、および Design Office
+Identity は CC BY-ND 4.0 で提供され、名称およびロゴに関する権利は留保します。
+
+This MIT License covers the source code in this repository. The weather data,
+chart images and base map remain subject to the terms of their providers, as
+stated in sections 4 and 6 of the README. The 5garashi.com Design Office
+symbol mark, logotype and Design Office Identity are provided under
+CC BY-ND 4.0, and all rights in the name and logos are reserved.
