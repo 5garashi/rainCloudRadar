@@ -1,94 +1,65 @@
-# AI観測所 / AI Observatory(版 2.1)
+# 雨雲レーダー 自動更新 / Rain Radar — Auto-refresh
 
-www.5garashi.com に設置する、主要AIサービスの採点ポータルです。
-調査はブラウザ版の Claude(claude.ai)で行い、ボタン2回で結果を反映します。APIキーは不要です。
-デザインと文章は「5garashi.com設計事務所 Identity 第4.6版」に従っています。
+気象庁の雨雲・雷・衛星画像などを地図に重ね、指定した間隔で自動更新して表示するブラウザ用ツールです。HTMLファイル1つで動作し、サーバー側の処理やビルド作業は不要です。
 
-## 1. 設置する
+A browser tool that overlays JMA rain, lightning, satellite and distribution-forecast tiles on a map and refreshes them at a chosen interval. It is a single HTML file: no server-side code and no build step.
 
-1. `ai-portal/data/config.php` の `AIO_ADMIN_PASSWORD` に、推測されにくい長い合言葉を設定する。
-2. `ai-portal` フォルダを、フォルダごと `public_html/` にアップロードする。
-   公開URLは `https://www.5garashi.com/ai-portal/`、管理画面は `https://www.5garashi.com/ai-portal/admin.php` になる。
-3. `ai-portal/ai-data.json` と `ai-portal/data/` に、PHPから書き込めるパーミッションを付ける。
-   多くのレンタルサーバーでは 644 / 755 のままで動く。書き込めない場合は 666 / 777 を試す。
-4. 管理画面にログインし、「観測所に反映」ボタンをブラウザのブックマークバーへドラッグして登録する(最初の1回のみ)。
+- 公開ページ / Published page: https://5garashi.github.io/rainCloudRadar/
+- 版 / Version: 1.4（2026-09-30）
 
-必要環境: PHP 7.4 以上。curl 拡張があれば、追加候補の公式URLの実在確認も行う。
+## 1. できること / Features
 
-## 2. 調査する(ボタン2回)
+1. 雨雲の動きを過去1時間から1時間先まで5分間隔で再生できます。
+   Plays the rain nowcast from one hour back to one hour ahead in 5-minute steps.
+2. 表示するデータを18種類から選べます（雨雲、雷活動度、竜巻発生確度、ひまわり、今後の雨、天気予報分布、雪、危険度分布）。
+   Selects one of 18 data sets, from the nowcast group through Himawari imagery, rainfall and distribution forecasts, snow and the Kikikuru risk maps.
+3. 1分・3分・5分・10分の間隔で自動更新します。「現在」を押した状態では、更新のたびに最新時刻へ切り替わります。
+   Refreshes every 1, 3, 5 or 10 minutes; while "現在 / Now" is active, each refresh moves to the latest time step.
+4. 等圧線を4hPaごとに重ね、高気圧・低気圧の中心を気圧の値とともに表示します（既定で表示）。
+   Overlays isobars every 4 hPa with high and low centres and their values (on by default).
+5. 気象庁の天気図（実況・24時間予想・48時間予想）を、移動と大きさ変更ができる窓で表示します。
+   Shows the JMA weather charts in a floating window that can be moved and resized.
+6. 現在位置を丸印と誤差の範囲で表示します。位置情報はブラウザの許可を得たときだけ取得し、地図の表示にのみ使い、外部には送信しません。
+   Shows your position with an accuracy circle. Location is requested only with permission, used only to draw the map, and never transmitted.
+7. 日本語と英語を切り替えられます。
+   Switches between Japanese and English.
 
-調査は、7日の目安を待たずにいつでも実行できる。
+## 2. データの出典 / Data sources
 
-1. 管理画面の「今すぐClaudeで調査する」を押す。claude.ai が開き、指示文がコピーされるので、貼り付けて送信する(Ctrl+V、Mac は Command+V、続けて Enter)。
-2. 回答が出たら、claude.ai の画面のまま、ブックマークバーの「観測所に反映」を押す。結果が反映され、変更内容の画面が開く。
+1. 気象データ・天気図：気象庁 https://www.jma.go.jp/bosai/
+   Weather data and charts: Japan Meteorological Agency.
+2. 背景地図：国土地理院 https://maps.gsi.go.jp/development/ichiran.html
+   Base map: Geospatial Information Authority of Japan.
+3. 海面気圧（等圧線の計算に使用）：Open-Meteo（CC BY 4.0） https://open-meteo.com/
+   Sea-level pressure for the isobars: Open-Meteo, CC BY 4.0.
 
-前回の調査から7日を過ぎると、管理画面に「目安超過」と表示される。
+凡例の色は、気象庁「ホームページにおける気象情報の配色に関する設定指針」（2012年5月）に基づきます。一部の凡例には色の対応を推定した部分があり、画面上で「（目安）/ (approximate)」と表示します。
 
-## 3. 反映時の規則
+Legend colours follow the JMA colour guideline of May 2012. Where part of the mapping is estimated, the legend is labelled "（目安）/ (approximate)".
 
-1. 追加候補は、別々の日に2回観測されたものだけを一覧に正式追加する。同じ日に何回調査しても、観測回数は1回として数える。
-2. 確信度が0.6未満の候補と、公式URLに接続できない候補は除外する。
-3. 1回の反映で動く点数は、各項目1.0点までとする。
-4. 90日間観測されなかった候補は、候補一覧から外す。
-5. 同じ結果を2回反映しようとした場合は、2回目を受け付けない。
-6. 反映内容に誤りがある場合は、管理画面の「直前の反映を元に戻す」で取り消せる。
+## 3. 制限事項 / Limitations
 
-## 4. フォルダ構成
+1. 等圧線は2度間隔の数値予報データから計算した推定値で、気象庁の天気図とは形が異なることがあります。前線は描きません。前線は「天気図」で確認してください。
+   The isobars are computed from model data on a 2-degree grid and can differ from the JMA charts. Fronts are not drawn; use the chart window for them.
+2. 気象庁の画像は偶数のズーム段階にのみ内容が入っています。奇数のズームでは1段細かい画像を縮小して表示します。
+   JMA supplies image content only at even zoom levels; odd levels are drawn by scaling down the next finer level.
+3. Open-Meteo の無料枠（非商用、1日10,000回・1時間5,000回）は接続元のIPアドレスごとに数えられます。気圧データは1時間使い回すため、ページを開いたままなら取得は1時間に1回、再読み込みのたびに1回発生します。
+   Open-Meteo's free non-commercial limits are counted per client IP. The pressure data is kept for one hour, so a page left open fetches once per hour and a reload fetches again.
+4. 防災の判断には、気象庁の発表を直接確認してください。本ツールは表示を補助するものです。
+   For decisions about safety, check the JMA announcements directly.
 
-```
-ai-portal/
-├─ index.html        公開ページ(日本語 / English 切り替え)
-├─ ai-data.json      掲載サービス・点数・推移・候補・観測記録
-├─ admin.php         管理画面
-├─ research.php      Claude に読ませる調査指示(掲載一覧と点数を含む)
-├─ receive.php       ブックマークレットからの結果の受け口
-├─ assets/           公式ロゴタイプ(日・英)とシンボルマーク(SVG原本)
-└─ data/             外部から見えないフォルダ(.htaccess でアクセス禁止)
-   ├─ config.php     設定
-   ├─ lib.php        検証・反映処理
-   ├─ secret.json    ブックマークレット用の鍵(自動作成)
-   ├─ state.json     二重反映防止の記録(自動作成)
-   ├─ update.log     反映の記録(自動作成)
-   └─ backups/       ai-data.json の直近10件(自動作成)
-```
+## 4. ライセンス / License
 
-## 5. Identity 第4.6版の適用箇所
-
-| 条項 | 適用内容 |
-|---|---|
-| 第2条・第9条9-2 | ファビコンと右上のマークに、シンボルマーク(シンプル版、volt #B92613)の SVG 原本を使用。ロゴと並ぶため装飾扱い(alt 空、aria-hidden) |
-| 第3条 | 左上に日本語ロゴタイプ(アウトライン版)を高さ40px(最小32px以上)で表示。英語表示では英語ロゴタイプに切り替え |
-| 第4条 | 公式パレット10色のみを使用。配分は紙7:緑2:赤1をめやすとし、赤は上位3位の順位、総合点、新着・警告バッジに限定 |
-| 第5条 | 追加候補の観測回数を「唐辛子1本=1回」のメーターで表示し、「観測 1/2」の数値を併記 |
-| 第6条 | 和文は太ゴシック(見出しW8、本文W6、行間1.7)、数値は等幅。本文14px以上、注記12px以上 |
-| 第7条 | 文字色と背景色は対照表の組み合わせのみ。操作部は44×44px以上、フォーカスは太い赤枠、色だけに意味を持たせない(▲▼・「!」・「OK:」「エラー:」を併記)、動きは0.3秒以内で点滅なし、reduced-motion 対応、200%拡大で横スクロールなし |
-| 第8条 | 結論を先に書き、日付は YYYY-MM-DD、絵文字不使用、「最終版」などの表現を不使用 |
-| 第9条9-1 | ヘッダーは head 色の帯と下辺 ink 3px の罫線、左にロゴ、右にマーク |
-| 第9条9-3・9-5 | 各ファイルの先頭にファイルヘッダー、本書の末尾に署名 |
-| 第1条「だれにでも」 | 公開ページを日本語 / English の2言語に対応 |
-
-## 6. 版の履歴
-
-| 版 | 日付 | 反映内容 |
-|---|---|---|
-| 2.1 | 2026-09-24 | ウイルス対策ソフトの誤検知対策。エラー抑制記号(@)の廃止、受け口を通常のフォーム受信に変更、ブックマークレットを符号化しない読めるコードに変更、ログイン失敗時の待機を回数制限(5回で10分)に変更 |
-| 2.0 | 2026-09-24 | フォルダ名を ai-portal に変更、Identity 第4.6版を適用、日英対応、今すぐ調査する機能、同日の観測回数の規則を追加 |
-
-## 7. 手で直すとき
-
-`ai-data.json` を直接編集すると、公開ページに反映される。
-
-1. 一覧から外す場合は、そのサービスに `"status": "removed"` を書く。
-2. 注意書きを付ける場合は、`"note"`(日本語)と `"en": {"note": ...}`(英語)を書く。
-3. 候補を却下する場合は、`candidates` から該当項目を削除する。
-
-## 8. 注意
-
-- **ブックマークレットの鍵:** 「観測所に反映」にはサイト専用の鍵が入っている。人に渡さないこと。漏れた場合は、管理画面の「鍵を作り直す」を押して登録し直す。
-- **nginx のサーバー:** `.htaccess` が効かない。`config.php` と `lib.php` は直接開かれても中身を表示しないが、ログとバックアップを隠す場合は、サーバー設定で `data/` へのアクセスを禁止する。
-- **ロゴとマークのライセンス:** `assets/` のロゴタイプとシンボルマークは CC BY-ND 4.0 のため、改変しないこと。それ以外のプログラムは MIT で提供する。
+1. ソースコード：MIT License（LICENSE）。
+   Source code: MIT License.
+2. 気象データ・天気図・背景地図：各配信元の利用規約に従い、出典を明示して利用します。
+   Weather data, charts and base map: used under the terms of their providers with the source stated.
+3. 5garashi.com設計事務所のシンボルマーク、ロゴタイプ、および Design Office Identity：CC BY-ND 4.0。名称およびロゴに関する権利は留保します。
+   The 5garashi.com Design Office symbol mark, logotype and Design Office Identity: CC BY-ND 4.0.
+4. 画面デザインは Design Office Identity 第4.6版に準拠します。 https://5garashi.github.io/5garashi-identity/
+   The interface follows Design Office Identity v4.6.
 
 ---
 
 **作成者 / Author**: 5garashi.com設計事務所 / 5garashi.com Design Office
-**最終更新 / Last updated**: 2026-09-24 JST
+**最終更新 / Last updated**: 2026-09-30 JST
