@@ -1,2914 +1,1404 @@
-
 <!DOCTYPE html>
 <!--
-  ファイル名 / File: denken3_kikinagashi_player_all_v12.html
-  概要 / Description: 電験三種 聞き流し暗記プレーヤー統合版 v12（架空引込線・系統保護問題追加、全問題1周モード、Identity Guideline v4.5準拠デザイン、法規+電力14セット、622問内蔵）
+  ファイル名 / File: rain_radar_v1_4_20260930.html
+  名称 / Title: 雨雲レーダー 自動更新 / Rain Radar — Auto-refresh
+  概要 / Description: 気象庁の雨雲・雷・衛星画像などを地図に重ねて自動更新する閲覧ツール
+                     Map viewer for JMA nowcast, satellite and distribution tiles with auto-refresh
   作成者 / Author: 5garashi.com設計事務所 / 5garashi.com Design Office
-  更新日 / Updated: 2026-07-12
+  作成日 / Date: 2026-09-21
   ライセンス / License: MIT
   SPDX-License-Identifier: MIT
--->
-<!--
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-グランドルール(読み上げ原稿フォーマット仕様)
-このプレーヤーが扱う問題テキストは、以下の形式に従う。
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. 1問は1行で書く。形式(解説は任意):
-     問N。<問題文>。、、、答えは、<答え>。解説、<解説>。
-   例: 問1。電路の絶縁耐力試験。試験電圧を、連続して、何分間加える。、、、答えは、10分。解説、絶縁耐力は一律、連続10分。
-2. 「問N。」で始まり「答えは、○○。」で終わる行だけを問題として読み込む。
-   タイトル・使い方・「ここから本文。」・空行・末尾のあいさつなど、
-   形式に合わない行はすべて無視する。
-3. 問題文の句読点は読み上げの「間」を兼ねる。「、、、」は考える間の目安。
-4. 問題と答えには単位まで含め、物理単位は角括弧で書く（例：10 [min]、6 [m]、50 [kW]）。
-   安全率・需要率・負荷率などの無次元量には、[単位なし] と明記する。
-   物理量を表す記号 V、I、P、W などと、単位 [V]、[A]、[W] を区別する。
-5. 読み上げに締めの言葉(「以上」など)は付けない。
-   答え自体に「以上・以下・未満」が含まれるため、混同を避ける。
-6. 問題番号Nはセット内で連番とし、問題数は行数に従う(50問固定ではない)。
-   同じ物理公式・計算手順を使い、数値だけを変えた類題は、原則として最大2問までとする。
-7. 読み上げ変換表:誤読しやすい語は「対象→カタカナ読み」(1行1件)の変換表で
-   読み上げ直前に置換する(画面表示は変えない)。#で始まる行はコメント、
-   行頭「re:」で正規表現。ファイル名が「読み上げ変換表」で始まるtxtを
-   読み込むと内蔵の変換表と置き換える。
-8. 単位・数式の表記：問題文中の物理量には必ず単位を付け、単位は角括弧で示す。
-   例：20 [N/m]、10 [m³/s]、6.6 [kV]、400 [kWh]、80 [%]。
-   数式は通常の記号で書く（例：P = √3VIcosθ、P_loss = 3I²R）。
-   誤読への対応は読み上げ変換表で行い、画面表示の数式・単位は変えない。
-9. 解説の書き方：計算問題の解説は「公式 → 代入 → 結果（単位付き）」の
-   順で書く（例：D = WS² / 8T。1800000 / 240000 = 7.5 [m]）。
-   数値の割り算だけの解説は不可。用語問題の解説は、根拠や対比を1文で示す。
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  デザイン / Design: Design Office Identity v4.6 に準拠 / follows Design Office Identity v4.6
+  データ / Data: 気象庁 / Japan Meteorological Agency（雨雲・天気図ほか）、
+                海面気圧 / Sea-level pressure: Open-Meteo (CC BY 4.0)、背景地図 / Base map: 国土地理院 / GSI
 -->
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>聞き流し暗記プレーヤー v10｜電験三種 法規＋電力</title>
-<meta name="description" content="電験三種の法規・電力を、問題・考える間・答え・解説の順に読み上げる学習プレーヤー。">
-<meta name="theme-color" content="#FFE699">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%0A%3C%21--%0A%20%20%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%90%8D%20%2F%20File%3A%205garashi_mark_simple.svg%0A%20%20%E6%A6%82%E8%A6%81%20%2F%20Description%3A%20%E3%82%B7%E3%83%B3%E3%83%9C%E3%83%AB%E3%83%9E%E3%83%BC%E3%82%AF%28%E3%82%B7%E3%83%B3%E3%83%97%E3%83%AB%E7%89%88%E3%83%BB%E5%9F%BA%E6%9C%AC%29volt%20%23B92613%20%2F%20Symbol%20mark%2C%20simple%20%28primary%29%0A%20%20%E4%BD%9C%E6%88%90%E8%80%85%20%2F%20Author%3A%205garashi.com%E8%A8%AD%E8%A8%88%E4%BA%8B%E5%8B%99%E6%89%80%20%2F%205garashi.com%20Design%20Office%0A%20%20%E4%BD%9C%E6%88%90%E6%97%A5%20%2F%20Created%3A%202026-07-11%20%20%E7%89%88%20%2F%20Version%3A%204.3%0A%20%20%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9%20%2F%20License%3A%20CC%20BY-ND%204.0%0A%20%20Copyright%20%28c%29%202026%205garashi.com%20Design%20Office%0A%20%20SPDX-License-Identifier%3A%20CC-BY-ND-4.0%0A--%3E%0A%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20560%20450%22%3E%0A%20%20%3Cg%20fill%3D%22%23B92613%22%3E%0A%20%20%20%20%3Cpath%20transform%3D%22translate%28165%2C235%29%20rotate%288%29%22%20d%3D%22M0%2C-190%20C22%2C-126%2022%2C126%200%2C190%20C-22%2C126%20-22%2C-126%200%2C-190%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20transform%3D%22translate%28245%2C235%29%20rotate%288%29%22%20d%3D%22M0%2C-190%20C22%2C-126%2022%2C126%200%2C190%20C-22%2C126%20-22%2C-126%200%2C-190%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20transform%3D%22translate%28325%2C235%29%20rotate%288%29%22%20d%3D%22M0%2C-190%20C22%2C-126%2022%2C126%200%2C190%20C-22%2C126%20-22%2C-126%200%2C-190%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20transform%3D%22translate%28405%2C235%29%20rotate%288%29%22%20d%3D%22M0%2C-190%20C22%2C-126%2022%2C126%200%2C190%20C-22%2C126%20-22%2C-126%200%2C-190%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20transform%3D%22translate%28280%2C180%29%20rotate%28-4%29%22%20d%3D%22M-248%2C0%20C-160%2C-27%20160%2C-27%20248%2C0%20C160%2C27%20-160%2C27%20-248%2C0%20Z%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>雨雲レーダー 自動更新 / Rain Radar — Auto-refresh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20560%20450'%3E%3Cg%20fill='%23B92613'%3E%3Cpath%20transform='translate(165,235)%20rotate(8)'%20d='M0,-190%20C22,-126%2022,126%200,190%20C-22,126%20-22,-126%200,-190%20Z'/%3E%3Cpath%20transform='translate(245,235)%20rotate(8)'%20d='M0,-190%20C22,-126%2022,126%200,190%20C-22,126%20-22,-126%200,-190%20Z'/%3E%3Cpath%20transform='translate(325,235)%20rotate(8)'%20d='M0,-190%20C22,-126%2022,126%200,190%20C-22,126%20-22,-126%200,-190%20Z'/%3E%3Cpath%20transform='translate(405,235)%20rotate(8)'%20d='M0,-190%20C22,-126%2022,126%200,190%20C-22,126%20-22,-126%200,-190%20Z'/%3E%3Cpath%20transform='translate(280,180)%20rotate(-4)'%20d='M-248,0%20C-160,-27%20160,-27%20248,0%20C160,27%20-160,27%20-248,0%20Z'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-/*
- * 5garashi.com設計事務所 / 5garashi.com Design Office
- * Identity Guideline v4.5 に基づくUI
- * License: MIT / SPDX-License-Identifier: MIT
- */
-:root{
-  --paper:#F9EFCB;
-  --head:#FFE699;
-  --ink:#385723;
-  --steel:#7B4A21;
-  --volt:#B92613;
-  --volt-deep:#8C1B0D;
-  --card:#FFFDF2;
-  --line:#DFCF9A;
-  --ok:#3E6B2A;
-  --cream:#FFF3D6;
-  --code:#33421F;
-  --content:860px;
-}
-*{box-sizing:border-box}
-html{min-height:100%;scroll-behavior:smooth}
-body{
-  margin:0;
-  min-height:100dvh;
-  background:var(--paper);
-  color:var(--ink);
-  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
-  font-size:15px;
-  font-weight:400;
-  line-height:1.7;
-  display:flex;
-  flex-direction:column;
-  overflow-wrap:anywhere;
-  -webkit-tap-highlight-color:transparent;
-  -webkit-font-smoothing:antialiased;
-  text-rendering:optimizeLegibility;
-}
-::selection{background:var(--volt);color:var(--cream)}
-button,select,textarea,input{font:inherit}
-button,select,input[type="checkbox"]{cursor:pointer}
-img{max-width:100%;height:auto}
-code,.mono,.answer .val,.qnum{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-button:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-visible,a:focus-visible{
-  outline:3px solid var(--volt);
-  outline-offset:3px;
-}
-.skip-link{
-  position:fixed;z-index:100;left:10px;top:0;
-  background:var(--ink);color:var(--head);font-weight:600;
-  padding:9px 16px;border-radius:0 0 10px 10px;
-  transform:translateY(-140%);transition:transform .18s ease;
-}
-.skip-link:focus{transform:translateY(0)}
-
-/* Header: Identity v4.5 Art.9-1 */
-.app-header{
-  background:var(--head);
-  border-bottom:3px solid var(--ink);
-  padding:10px max(18px,env(safe-area-inset-right)) 10px max(18px,env(safe-area-inset-left));
-  display:grid;
-  grid-template-columns:auto minmax(0,1fr) auto;
-  align-items:center;
-  gap:20px;
-}
-.brand-lockup{
-  width:164px;
-  min-width:164px;
-  line-height:1;
-}
-.brand-lockup-img{display:block;width:100%;height:auto}
-.htext{min-width:0;display:flex;flex-direction:column;gap:1px}
-.app-header h1{
-  margin:0;
-  color:var(--ink);
-  font-size:clamp(18px,2.2vw,24px);
-  font-weight:700;
-  line-height:1.35;
-  letter-spacing:.03em;
-}
-.app-en{
-  color:var(--steel);
-  font-size:11px;
-  font-weight:500;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  line-height:1.4;
-}
-.app-header .sub{
-  color:var(--steel);
-  font-size:12px;
-  font-weight:400;
-  line-height:1.45;
-  margin-top:2px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.header-actions{display:flex;align-items:center;gap:20px;flex:none}
-.helpbtn{
-  min-width:44px;height:44px;padding:0 14px;
-  display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  border:2px solid var(--ink);border-radius:999px;
-  background:var(--card);color:var(--ink);
-  font-size:13px;font-weight:500;
-}
-.helpbtn .help-q{font-family:Georgia,"Times New Roman",serif;font-size:20px;line-height:1}
-.helpbtn:hover{background:var(--paper)}
-.brand-mark-wrap{
-  display:flex;align-items:center;justify-content:center;
-  padding:4px 2px;
-  flex:none;
-}
-.brand-mark-img{
-  display:block;
-  width:auto;
-  height:70px;
-  flex:none;
-}
-
-main{
-  flex:1;
-  width:min(100%,var(--content));
-  margin:0 auto;
-  padding:28px 22px 44px;
-  display:flex;
-  flex-direction:column;
-  gap:18px;
-}
-
-/* Question card: card surface + restrained accent */
-.qcard{
-  min-height:246px;
-  background:var(--card);
-  border:1.5px solid var(--line);
-  border-radius:16px;
-  padding:24px;
-  box-shadow:0 2px 10px rgba(27,37,48,.05);
-  display:flex;
-  flex-direction:column;
-  gap:18px;
-}
-.qmeta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.qnum{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-height:32px;padding:4px 13px;border-radius:999px;
-  background:var(--volt);color:var(--cream);
-  font-size:12px;font-weight:600;letter-spacing:.03em;
-}
-.qcat{color:var(--steel);font-size:12px;font-weight:500;letter-spacing:.05em}
-.qtext{
-  color:var(--ink);
-  font-size:17px;
-  font-weight:500;
-  line-height:1.75;
-  letter-spacing:.01em;
-}
-.answer{
-  margin-top:auto;
-  padding:16px 0 0;
-  border-top:1.5px dashed var(--line);
-  display:grid;
-  grid-template-columns:auto minmax(0,auto) minmax(0,1fr);
-  align-items:baseline;
-  gap:12px;
-  min-height:72px;
-}
-.answer::before{
-  content:"答え";
-  color:var(--steel);
-  font-size:12px;
-  font-weight:500;
-  letter-spacing:.08em;
-  white-space:nowrap;
-}
-.answer .val{
-  color:var(--volt-deep);
-  font-size:clamp(27px,5vw,38px);
-  font-weight:700;
-  line-height:1.25;
-  letter-spacing:-.025em;
-  opacity:0;
-  transition:opacity .2s ease;
-}
-.answer .memo{
-  color:var(--steel);
-  font-size:12.5px;
-  font-weight:400;
-  line-height:1.7;
-  opacity:0;
-  transition:opacity .2s ease;
-}
-.answer.shown .val,.answer.shown .memo{opacity:1}
-.flags{
-  display:flex;gap:10px;flex-wrap:wrap;
-  padding-top:12px;border-top:1px solid var(--line);
-}
-.learned,.yabai,.tgl{
-  min-height:44px;
-  display:inline-flex;align-items:center;gap:8px;
-  border:1.5px solid var(--line);border-radius:999px;
-  background:var(--paper);
-  padding:7px 13px;
-  font-size:13px;font-weight:500;
-}
-.learned{color:var(--ok)}
-.yabai{color:var(--volt-deep)}
-.learned input,.yabai input,.tgl input{width:19px;height:19px;flex:none}
-.learned input,.tgl input{accent-color:var(--ok)}
-.yabai input{accent-color:var(--volt-deep)}
-
-.stage{display:flex;align-items:center;justify-content:center;gap:24px;padding-top:4px}
-.skip{
-  width:48px;height:48px;min-width:48px;
-  border:1.5px solid var(--line);border-radius:999px;
-  background:var(--card);color:var(--ink);
-  font-size:18px;font-weight:600;
-}
-.skip:hover{border-color:var(--ink);background:var(--head)}
-.playwrap{position:relative;width:112px;height:112px;flex:none}
-svg.ring{position:absolute;inset:0;transform:rotate(-90deg)}
-svg.ring circle{fill:none;stroke-width:5}
-svg.ring .bg{stroke:var(--line)}
-svg.ring .fg{stroke:var(--volt);stroke-linecap:round;transition:stroke-dashoffset .2s linear}
-#playBtn{
-  position:absolute;inset:10px;
-  border:0;border-radius:999px;
-  background:var(--ink);color:var(--head);
-  font-size:32px;font-weight:600;
-  display:flex;align-items:center;justify-content:center;
-}
-#playBtn:hover{background:#2F491E}
-#playBtn:active{transform:scale(.98)}
-.stage-label{text-align:center;color:var(--steel);font-size:12px;font-weight:500;letter-spacing:.04em;min-height:20px}
-.progress{display:flex;align-items:center;gap:12px;color:var(--steel);font-size:12px;font-weight:500}
-.bar{flex:1;height:7px;background:var(--line);border-radius:999px;overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--volt);border-radius:999px;transition:width .25s ease}
-
-/* Panels mirror Identity art-body/card */
-.panel,.importbox{
-  background:var(--card);
-  border:1.5px solid var(--line);
-  border-radius:16px;
-  padding:22px 24px;
-  box-shadow:0 2px 10px rgba(27,37,48,.05);
-}
-.panel{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.panel .full{grid-column:1/-1}
-.panel-title,.importbox h2{
-  margin:0;
-  color:var(--ink);
-  font-size:17px;
-  font-weight:600;
-  letter-spacing:.02em;
-  display:flex;align-items:baseline;gap:10px;
-  padding-bottom:10px;
-  border-bottom:1.5px dashed var(--line);
-}
-.panel-title::before,.importbox h2::before{
-  content:"";width:8px;height:22px;border-radius:999px;background:var(--ink);flex:none;
-}
-.panel-title small,.importbox h2 small{color:var(--steel);font-size:10px;font-weight:400;letter-spacing:.14em}
-.field label:not(.tgl){display:block;color:var(--steel);font-size:12px;font-weight:500;letter-spacing:.04em;margin-bottom:6px}
-select{
-  width:100%;min-height:44px;
-  padding:8px 12px;
-  border:1.5px solid var(--line);border-radius:10px;
-  background:var(--paper);color:var(--ink);
-  font-size:14px;font-weight:400;
-}
-select:hover{border-color:var(--ink)}
-.toggles{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.tgl{color:var(--ink);font-weight:400}
-.minibtn{
-  min-height:44px;
-  padding:8px 15px;
-  border:1.5px solid var(--line);border-radius:999px;
-  background:var(--paper);color:var(--ink);
-  font-size:12.5px;font-weight:500;
-}
-.minibtn:hover{border-color:var(--ink);background:var(--head)}
-.statline{color:var(--steel);font-size:12px;font-weight:400}
-
-.importbox{display:flex;flex-direction:column;gap:14px}
-.importrow{display:flex;gap:10px;flex-wrap:wrap}
-.importbox textarea{
-  width:100%;min-height:116px;
-  border:1.5px solid var(--line);border-radius:10px;
-  padding:12px 14px;
-  background:var(--paper);color:var(--ink);
-  font-size:14px;line-height:1.7;
-  display:none;
-}
-.importbox textarea.open{display:block}
-.importstatus{min-height:18px;color:var(--ok);font-size:12px;font-weight:500}
-.importhint{
-  color:var(--steel);
-  background:var(--paper);
-  border:1px dashed var(--line);
-  border-radius:10px;
-  padding:12px 14px;
-  font-size:12px;font-weight:400;line-height:1.75;
-}
-code{background:var(--card);padding:1px 5px;border-radius:5px;color:var(--code);font-size:.94em}
-
-/* Help dialog */
-#helpOverlay{
-  position:fixed;inset:0;z-index:80;
-  display:none;align-items:flex-start;justify-content:center;
-  overflow:auto;padding:24px;
-  background:rgba(51,66,31,.56);
-}
-#helpOverlay.open{display:flex}
-.helpcard{
-  width:min(100%,620px);
-  background:var(--card);
-  border:2px solid var(--ink);
-  border-radius:16px;
-  padding:22px 24px;
-  color:var(--ink);
-  font-size:14px;line-height:1.75;
-}
-.helpcard h2{margin:0 0 12px;font-size:21px;font-weight:700}
-.helpcard h3{margin:18px 0 6px;color:var(--steel);font-size:14px;font-weight:600;border-bottom:1.5px dashed var(--line);padding-bottom:5px}
-.helpcard table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
-.helpcard td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-.helpcard td.k{width:132px;white-space:nowrap;font-weight:500}
-.helpclose{
-  width:100%;min-height:44px;margin-top:18px;
-  border:0;border-radius:999px;
-  background:var(--ink);color:var(--head);
-  font-weight:600;font-size:14px;
-}
-
-footer{
-  margin-top:auto;
-  border-top:3px solid var(--ink);
-  background:var(--head);
-  padding:20px 22px;
-  text-align:center;
-  color:var(--steel);
-  font-size:11.5px;font-weight:400;line-height:1.9;
-}
-.warn{color:var(--volt-deep);font-weight:600}
-.footer-signature{display:block;margin-top:8px;color:var(--ink);font-size:11px;letter-spacing:.03em}
-
-@media(max-width:820px){
-  .app-header{grid-template-columns:auto minmax(0,1fr) auto;gap:14px}
-  .brand-lockup{width:148px;min-width:148px}
-  .brand-mark-img{height:62px}
-  .header-actions{gap:14px}
-  .help-label{display:none}
-  .helpbtn{width:44px;padding:0}
-}
-@media(max-width:640px){
-  .app-header{
-    grid-template-columns:minmax(0,1fr) auto;
-    grid-template-areas:"logo actions" "title title";
-    gap:8px 14px;
-    padding-block:10px;
+  /* 5garashi.com設計事務所 公式パレット / official palette (Art. 4, Art. 9-4) */
+  :root {
+    --paper: #F9EFCB;
+    --head: #FFE699;
+    --ink: #385723;
+    --steel: #7B4A21;
+    --volt: #B92613;
+    --volt-deep: #8C1B0D;
+    --card: #FFFDF2;
+    --line: #DFCF9A;
+    --ok: #3E6B2A;
+    --cream: #FFF3D6;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+    font-weight: 600;
   }
-  .brand-lockup{grid-area:logo;width:142px;min-width:142px}
-  .htext{grid-area:title;border-top:1px solid var(--line);padding-top:8px}
-  .header-actions{grid-area:actions}
-  .brand-mark-img{height:54px}
-  .app-header h1{font-size:18px}
-  .app-en{font-size:10px}
-  main{padding:20px 14px 34px;gap:14px}
-  .qcard,.panel,.importbox{padding:18px;border-radius:14px}
-  .panel{grid-template-columns:1fr}
-  .panel .full{grid-column:1}
-  .answer{grid-template-columns:1fr;gap:4px}
-  .answer::before{margin-bottom:2px}
-  .answer .val{font-size:31px}
-  .stage{gap:18px}
-  .playwrap{width:106px;height:106px}
-  .skip{width:46px;height:46px;min-width:46px}
-  .flags{flex-direction:column}
-  .learned,.yabai{width:100%;border-radius:10px}
-  #helpOverlay{padding:12px}
-  .helpcard{padding:18px}
-}
-@media(max-width:390px){
-  .brand-lockup{width:126px;min-width:126px}
-  .brand-mark-img{height:48px}
-  .header-actions{gap:10px}
-  .qtext{font-size:16px}
-  .importrow .minibtn{width:100%}
-}
-@media(prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  *,*::before,*::after{animation:none!important;transition:none!important}
-}
-@media(forced-colors:active){
-  .qcard,.panel,.importbox,.helpcard{border-color:CanvasText}
-}
-</style>
+  /* ユニバーサルデザイン標準装備 / universal design as standard (Art. 7, Art. 9-4) */
+  :focus-visible { outline: 3px solid var(--volt); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
 
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); }
+  #map { position: absolute; inset: 0; }
+
+  /* ブランド表示 / brand header (Art. 9-1)。マークは volt 固定・変形しない */
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    margin: -8px -10px 8px; padding: 6px 10px;
+    background: var(--head); border-bottom: 3px solid var(--ink);
+    border-radius: 3px 3px 0 0;
+  }
+  .brand .mark { width: 30px; height: 24px; flex: 0 0 auto; margin: 4px; }  /* 最小16px以上・四方に間(ま) */
+  .brand .lang { min-height: 44px; min-width: 64px; padding: 0 10px; font-size: 0.8125rem; background: var(--card); }
+  .brand-title { font-weight: 800; font-size: 0.875rem; letter-spacing: .03em; color: var(--ink); }
+
+  /* 操作パネル / control panel */
+  .panel {
+    position: absolute; z-index: 1000;
+    left: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    width: min(23rem, calc(100% - 20px));
+    background: var(--card);
+    border: 2px solid var(--ink);
+    border-radius: 6px;
+    padding: 8px 10px 6px;
+    font-size: 0.875rem;
+    line-height: 1.65;
+  }
+  .panel.collapsed { width: auto; }
+  .panel.collapsed .brand { margin-bottom: 6px; }
+  .panel.collapsed .body,
+  .panel.collapsed .opts,
+  .panel.collapsed .controls { display: none; }
+
+  .row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .row > * { flex-shrink: 0; }
+  .time {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 800; font-size: 1rem; color: var(--volt-deep); white-space: nowrap;
+  }
+  .kind {
+    font-size: 0.75rem; font-weight: 800; letter-spacing: .03em;
+    padding: 1px 8px; border-radius: 3px;
+    color: var(--cream); background: var(--ink);
+  }
+  .kind.future { background: var(--volt-deep); }
+  .spacer { flex: 1; }
+
+  /* 操作の3原則(1) 押しやすく:44×44px以上 / tap targets 44px (Art. 7-3) */
+  button {
+    font: inherit; font-weight: 800; color: var(--ink); background: var(--card);
+    border: 2px solid var(--line); border-radius: 4px;
+    min-width: 44px; min-height: 44px; padding: 0 10px; cursor: pointer;
+    transition: background-color .15s, border-color .15s;
+  }
+  button:hover { border-color: var(--ink); }
+  button[aria-pressed="true"] { background: var(--head); border-color: var(--ink); }
+  .controls { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+  .controls button { flex: 0 0 auto; }
+
+  /* 時刻の帯 / timeline */
+  .timeline { margin: 8px 0 2px; }
+  .track { display: flex; gap: 2px; height: 10px; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+  .track span { flex: 1; background: var(--line); cursor: pointer; }
+  .track span.past { background: var(--ink); }
+  /* 実況と予報は色だけで区別しない:予報は斜線 / forecast is hatched, not color-only (Art. 7-2) */
+  .track span.future {
+    background: repeating-linear-gradient(45deg, var(--ink) 0 2px, var(--card) 2px 4px);
+  }
+  .track span.now { box-shadow: inset 0 0 0 2px var(--volt); }
+  .track span.active { box-shadow: inset 0 0 0 2px var(--volt-deep), inset 0 0 0 4px var(--cream); }
+  input[type=range] { width: 100%; margin: 0; height: 44px; accent-color: var(--ink); }
+
+  .meta { font-size: 0.75rem; color: var(--steel); letter-spacing: .06em; display: flex; flex-wrap: wrap; gap: 0 10px; }
+  .meta .err { color: var(--volt-deep); font-weight: 800; flex-basis: 100%; }
+  .meta .err:empty { display: none; }
+  .en { color: var(--steel); font-weight: 600; }
+
+  /* 設定 / settings */
+  .opts {
+    display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px 10px;
+    border-top: 2px solid var(--line); margin-top: 8px; padding-top: 8px;
+  }
+  .opts[hidden] { display: none; }
+  .opts label { font-size: 0.8125rem; }
+
+  .opts .wide { grid-column: 1 / -1; }
+  .opts .actions { grid-column: 1 / -1; display: flex; gap: 8px; }
+  .opts .actions button { flex: 1; }
+  .opts .check { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+  .opts .check input { width: 24px; height: 24px; accent-color: var(--ink); }
+  select {
+    font: inherit; font-weight: 600; color: var(--ink); background: var(--card);
+    border: 2px solid var(--line); border-radius: 4px; padding: 8px; min-height: 44px; width: 100%;
+  }
+  .credit { grid-column: 1 / -1; font-size: 0.75rem; color: var(--steel); }
+  .credit a { color: var(--ink); }
+
+  /* 凡例 / legend。色は気象庁の配色を用いる(機能色) / JMA functional colors */
+  .legend {
+    position: absolute; z-index: 1000;
+    right: 10px; top: calc(10px + env(safe-area-inset-top, 0px));
+    background: var(--card); border: 2px solid var(--ink); border-radius: 6px;
+    padding: 8px 10px; font-size: 0.75rem; line-height: 1.6; color: var(--ink);
+  }
+  .legend div { display: flex; align-items: center; gap: 8px; }
+  .legend i { width: 16px; height: 12px; display: inline-block; border: 1px solid var(--steel); }
+  .legend .unit { color: var(--steel); font-weight: 800; letter-spacing: .06em; margin-bottom: 4px; display: block; }
+  .legend a { color: var(--ink); }
+
+  /* 天気図ダイアログ / weather chart dialog */
+  /* 地図の上に浮かぶ窓:移動・大きさ変更ができる / floating, movable, resizable window */
+  dialog#chart {
+    position: fixed; z-index: 1100; margin: 0; inset: auto;
+    left: 60px; top: calc(10px + env(safe-area-inset-top, 0px));
+    width: min(440px, calc(100% - 20px)); min-width: 260px;
+    max-width: calc(100vw - 20px); max-height: calc(100vh - 20px);
+    overflow: auto; resize: both;
+    padding: 8px 10px 10px; border: 2px solid var(--ink); border-radius: 6px;
+    background: var(--card); color: var(--ink); font-size: 0.875rem;
+    box-shadow: 0 4px 16px rgba(56, 87, 35, 0.3);
+  }
+  dialog#chart .brand { justify-content: space-between; cursor: move; touch-action: none; user-select: none; }
+  dialog#chart .brand:focus-visible { outline-offset: -3px; }
+  dialog#chart.dragging { opacity: 0.9; }
+  .drag-hint { font-size: 0.75rem; color: var(--steel); font-weight: 600; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+  .chart-nav { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .chart-caption {
+    flex: 1; text-align: center; font-weight: 800;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; color: var(--volt-deep);
+  }
+  .chart-img { border: 1px solid var(--line); background: #fff; text-align: center; overflow: auto; }
+  .chart-img img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  button:disabled { opacity: .45; cursor: default; }
+  .controls { flex-wrap: wrap; }
+
+  /* 等圧線の高・低 / high and low markers。色だけに頼らず文字で示す */
+  .hl { background: none; border: none; }
+  .hl div {
+    transform: translate(-50%, -50%); display: inline-flex; flex-direction: column; align-items: center;
+    font-weight: 800; line-height: 1.1; text-shadow: 0 0 3px #FFF3D6, 0 0 3px #FFF3D6;
+    white-space: nowrap;
+  }
+  .hl b { font-size: 1.25rem; }
+  .hl span { font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .hl.high div { color: var(--ink); }
+  .hl.low div { color: var(--volt-deep); }
+  /* 現在位置 / my position。色だけでなく文字でも示す(第7条7-2) */
+  .me { background: none; border: none; }
+  .me div {
+    transform: translate(-50%, -50%); display: flex; align-items: center; gap: 4px;
+    font-weight: 800; font-size: 0.75rem; white-space: nowrap; color: var(--volt-deep);
+    text-shadow: 0 0 3px #FFF3D6, 0 0 3px #FFF3D6, 0 0 3px #FFF3D6;
+  }
+  .me i {
+    flex: 0 0 auto; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--volt); border: 3px solid var(--cream); box-sizing: content-box;
+    box-shadow: 0 0 0 1px var(--volt-deep);
+  }
+  .legend .iso { display: block; border-top: 1px solid var(--line); margin-top: 6px; padding-top: 4px; }
+  .legend .iso > div { display: flex; align-items: center; gap: 8px; }
+  .legend .iso i { height: 0; border: 0; border-top: 2px solid var(--ink); }
+  .legend .iso i.thin { border-top-width: 1px; }
+
+  .leaflet-container { font-family: inherit; }
+  .leaflet-control-zoom a { color: var(--ink); }
+
+  @media (max-width: 520px) {
+    /* 本文14px・注記12pxの下限は守る / keep the 14px body and 12px note minimums (Art. 6) */
+    .panel { padding: 6px 8px 4px; }
+    .legend { padding: 6px 8px; }
+  }
+</style>
 </head>
 <body>
-<a class="skip-link" href="#mainContent">本文へスキップ</a>
+<div id="map"></div>
 
-<header class="app-header">
-  <div class="brand-lockup">
-    <img class="brand-lockup-img" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLQogIOODleOCoeOCpOODq+WQjSAvIEZpbGU6IDVnYXJhc2hpX2xvZ290eXBlLnN2ZwogIOamguimgSAvIERlc2NyaXB0aW9uOiDjg63jgrTjgr/jgqTjg5co57eo6ZuG55So5Y6f5pysOuaWh+Wtl+S/neaMgeOAguimgeODkuODqeOCruODjuinkuOCtC9Ob3RvIFNhbnMgSlApIC8gTG9nb3R5cGUsIGVkaXRpbmcgbWFzdGVyIChsaXZlIHRleHQpCiAg5L2c5oiQ6ICFIC8gQXV0aG9yOiA1Z2FyYXNoaS5jb23oqK3oqIjkuovli5nmiYAgLyA1Z2FyYXNoaS5jb20gRGVzaWduIE9mZmljZQogIOS9nOaIkOaXpSAvIENyZWF0ZWQ6IDIwMjYtMDctMTEgIOeJiCAvIFZlcnNpb246IDQuMwogIOODqeOCpOOCu+ODs+OCuSAvIExpY2Vuc2U6IENDIEJZLU5EIDQuMAogIENvcHlyaWdodCAoYykgMjAyNiA1Z2FyYXNoaS5jb20gRGVzaWduIE9mZmljZQogIFNQRFgtTGljZW5zZS1JZGVudGlmaWVyOiBDQy1CWS1ORC00LjAKLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTYwIDIyMCI+CiAgPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjU1MiIgaGVpZ2h0PSIyMTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzM4NTcyMyIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHJlY3QgeD0iMTQiIHk9IjE0IiB3aWR0aD0iNTMyIiBoZWlnaHQ9IjE5MiIgZmlsbD0iI0ZGRTY5OSIgc3Ryb2tlPSIjMzg1NzIzIiBzdHJva2Utd2lkdGg9IjciLz4KICA8dGV4dCB4PSIyODAiIHk9IjExOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IidIaXJhZ2lubyBLYWt1IEdvdGhpYyBQcm9OJywnSGlyYWdpbm8gU2FucycsJ05vdG8gU2FucyBKUCcsJ1l1IEdvdGhpYycsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjgwMCIgZm9udC1zaXplPSI2NiIgZmlsbD0iIzdCNEEyMSI+PHRzcGFuIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCdUaW1lcyBOZXcgUm9tYW4nLHNlcmlmIiBmb250LXN0eWxlPSJpdGFsaWMiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iNzQiIGZpbGw9IiMzODU3MjMiPjU8L3RzcGFuPmdhcmFzaGkuY29tPC90ZXh0PgogIDx0ZXh0IHg9IjI4OCIgeT0iMTcyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iJ0hpcmFnaW5vIEtha3UgR290aGljIFByb04nLCdIaXJhZ2lubyBTYW5zJywnTm90byBTYW5zIEpQJywnWXUgR290aGljJyxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iODAwIiBmb250LXNpemU9IjMwIiBsZXR0ZXItc3BhY2luZz0iOSIgZmlsbD0iIzdCNEEyMSI+6Kit6KiI5LqL5YuZ5omAPC90ZXh0Pgo8L3N2Zz4K" alt="5garashi.com設計事務所 ロゴ">
+<!-- 天気図(気象庁の画像をそのまま表示) / JMA weather chart shown as published -->
+<dialog id="chart" aria-labelledby="chart-title">
+  <div class="brand" id="chart-handle" tabindex="0"
+       data-ja-title="ドラッグで移動（矢印キーでも動かせます）" data-en-title="Drag to move (arrow keys also work)"
+       title="ドラッグで移動（矢印キーでも動かせます）">
+    <span class="brand-title" id="chart-title" data-ja="天気図" data-en="Weather chart">天気図</span>
+    <span class="drag-hint" aria-hidden="true" data-ja="⇕ 移動" data-en="⇕ Move">⇕ 移動</span>
+    <span class="spacer"></span>
+    <button id="chart-close" data-ja="閉じる" data-en="Close">閉じる</button>
   </div>
-  <div class="htext">
-    <h1>聞き流し暗記プレーヤー</h1>
-    <span class="app-en">Listen-and-Learn Player</span>
-    <span class="sub" id="dsName">読み込み中…</span>
+  <div class="tabs" role="group" data-ja-label="種類" data-en-label="Chart type" aria-label="種類">
+    <button data-kind="now" aria-pressed="true" data-ja="実況" data-en="Analysis">実況</button>
+    <button data-kind="ft24" aria-pressed="false" data-ja="24時間予想" data-en="24h forecast">24時間予想</button>
+    <button data-kind="ft48" aria-pressed="false" data-ja="48時間予想" data-en="48h forecast">48時間予想</button>
   </div>
-  <div class="header-actions">
-    <button class="helpbtn" id="helpBtn" aria-label="ヘルプ" title="ヘルプ（H）"><span class="help-q" aria-hidden="true">?</span><span class="help-label">ヘルプ</span></button>
-    <span class="brand-mark-wrap">
-    <img class="brand-mark-img" src="data:image/svg+xml;utf8,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%0A%3C%21--%0A%20%20%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%90%8D%20%2F%20File%3A%205garashi_mark_simple.svg%0A%20%20%E6%A6%82%E8%A6%81%20%2F%20Description%3A%20%E3%82%B7%E3%83%B3%E3%83%9C%E3%83%AB%E3%83%9E%E3%83%BC%E3%82%AF%28%E3%82%B7%E3%83%B3%E3%83%97%E3%83%AB%E7%89%88%E3%83%BB%E5%9F%BA%E6%9C%AC%29volt%20%23B92613%20%2F%20Symbol%20mark%2C%20simple%20%28primary%29%0A%20%20%E4%BD%9C%E6%88%90%E8%80%85%20%2F%20Author%3A%205garashi.com%E8%A8%AD%E8%A8%88%E4%BA%8B%E5%8B%99%E6%89%80%20%2F%205garashi.com%20Design%20Office%0A%20%20%E4%BD%9C%E6%88%90%E6%97%A5%20%2F%20Created%3A%202026-07-11%20%20%E7%89%88%20%2F%20Version%3A%204.3%0A%20%20%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9%20%2F%20License%3A%20CC%20BY-ND%204.0%0A%20%20Copyright%20%28c%29%202026%205garashi.com%20Design%20Office%0A%20%20SPDX-License-Identifier%3A%20CC-BY-ND-4.0%0A--%3E%0A%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20560%20450%22%3E%0A%20%20%3Cg%20fill%3D%22%23B92613%22%3E%0A%20%20%20%20%3Cpath%20transform%3D%22translate%28165%2C235%29%20rotate%288%29%22%20d%3D%22M0%2C-190%20C22%2C-126%2022%2C126%200%2C190%20C-22%2C126%20-22%2C-126%200%2C-190%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20transform%3D%22translate%28245%2C235%29%20rotate%288%29%22%20d%3D%22M0%2C-190%20C22%2C-126%2022%2C126%200%2C190%20C-22%2C126%20-22%2C-126%200%2C-190%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20transform%3D%22translate%28325%2C235%29%20rotate%288%29%22%20d%3D%22M0%2C-190%20C22%2C-126%2022%2C126%200%2C190%20C-22%2C126%20-22%2C-126%200%2C-190%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20transform%3D%22translate%28405%2C235%29%20rotate%288%29%22%20d%3D%22M0%2C-190%20C22%2C-126%2022%2C126%200%2C190%20C-22%2C126%20-22%2C-126%200%2C-190%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20transform%3D%22translate%28280%2C180%29%20rotate%28-4%29%22%20d%3D%22M-248%2C0%20C-160%2C-27%20160%2C-27%20248%2C0%20C160%2C27%20-160%2C27%20-248%2C0%20Z%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A" alt="5garashi.com設計事務所 シンボルマーク">
+  <div class="tabs" role="group" data-ja-label="範囲" data-en-label="Area" aria-label="範囲">
+    <button data-area="near" aria-pressed="true" data-ja="日本周辺" data-en="Around Japan">日本周辺</button>
+    <button data-area="asia" aria-pressed="false" data-ja="アジア" data-en="Asia">アジア</button>
+  </div>
+  <div class="chart-nav">
+    <button id="chart-prev" data-ja="前の図" data-en="Earlier">前の図</button>
+    <span id="chart-caption" class="chart-caption" aria-live="polite"></span>
+    <button id="chart-next" data-ja="次の図" data-en="Later">次の図</button>
+  </div>
+  <div class="chart-img"><img id="chart-img" alt=""></div>
+  <p class="credit">
+    <span id="chart-updated"></span>　
+    <span data-ja="出典：気象庁" data-en="Source: Japan Meteorological Agency">出典：気象庁</span>　
+    <a href="https://www.jma.go.jp/bosai/weather_map/" target="_blank" rel="noopener"
+       data-ja="気象庁の天気図ページ" data-en="JMA weather chart page">気象庁の天気図ページ</a>
+  </p>
+</dialog>
+
+<div class="legend" id="legend" aria-label="降水強度の凡例"></div>
+
+<!-- シンボルマーク(シンプル版) / Symbol mark, simple version — 公式SVG原本のまま / official SVG, unmodified -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="tally5" viewBox="0 0 560 450">
+    <g fill="var(--mark,#B92613)">
+      <path transform="translate(165,235) rotate(8)" d="M0,-190 C22,-126 22,126 0,190 C-22,126 -22,-126 0,-190 Z"/>
+      <path transform="translate(245,235) rotate(8)" d="M0,-190 C22,-126 22,126 0,190 C-22,126 -22,-126 0,-190 Z"/>
+      <path transform="translate(325,235) rotate(8)" d="M0,-190 C22,-126 22,126 0,190 C-22,126 -22,-126 0,-190 Z"/>
+      <path transform="translate(405,235) rotate(8)" d="M0,-190 C22,-126 22,126 0,190 C-22,126 -22,-126 0,-190 Z"/>
+      <path transform="translate(280,180) rotate(-4)" d="M-248,0 C-160,-27 160,-27 248,0 C160,27 -160,27 -248,0 Z"/>
+    </g>
+  </symbol>
+</svg>
+
+<div class="panel" id="panel" role="region" aria-label="表示の操作 / Display controls">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 560 450" role="img" aria-label="5garashi.com設計事務所シンボルマーク / 5garashi.com Design Office symbol mark"><use href="#tally5"/></svg>
+    <span class="brand-title" data-ja="雨雲レーダー 自動更新" data-en="Rain Radar — Auto-refresh">雨雲レーダー 自動更新</span>
+    <span class="spacer"></span>
+    <button id="lang" class="lang" data-ja="English" data-en="日本語"
+            data-ja-title="Switch to English" data-en-title="日本語に切り替える"
+            title="Switch to English">English</button>
+  </div>
+
+  <div class="row">
+    <button id="collapse" aria-expanded="true" data-ja-title="たたむ / 広げる" data-en-title="Collapse / expand">▼</button>
+    <span class="time" id="time">読み込み中</span>
+    <span class="kind" id="kind">実況</span>
+    <span class="spacer"></span>
+    <button id="live" aria-pressed="true" data-ja="現在" data-en="Now"
+            data-ja-title="最新の実況で止めて自動で追従" data-en-title="Stay on the latest observation">現在</button>
+    <button id="settings" aria-pressed="false" aria-controls="opts" data-ja="設定" data-en="Settings"
+            data-ja-title="設定" data-en-title="Settings">設定</button>
+  </div>
+
+  <div class="body">
+    <div class="timeline">
+      <div class="track" id="track"></div>
+      <input type="range" id="slider" min="0" max="0" value="0"
+             data-ja-label="表示時刻" data-en-label="Displayed time" aria-label="表示時刻">
+    </div>
+    <div class="meta">
+      <span id="layername">雨雲の動き</span>
+      <span id="updated"></span>
+      <span id="countdown"></span>
+      <span id="error" class="err"></span>
+      <span id="tileerr" class="err"></span>
+      <span id="isoinfo"></span>
+      <span id="geoinfo"></span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="prev" data-ja="前" data-en="Back" data-ja-title="前のコマ" data-en-title="Previous frame">前</button>
+    <button id="play" data-ja-title="再生" data-en-title="Play">再生</button>
+    <button id="next" data-ja="次" data-en="Next" data-ja-title="次のコマ" data-en-title="Next frame">次</button>
+    <span class="spacer"></span>
+    <button id="geo" aria-pressed="false" data-ja="現在地" data-en="Location"
+            data-ja-title="現在位置を地図に表示する" data-en-title="Show my position on the map">現在地</button>
+    <button id="isobar" aria-pressed="true" data-ja="等圧線" data-en="Isobars"
+            data-ja-title="等圧線を地図に重ねる" data-en-title="Overlay isobars on the map">等圧線</button>
+    <button id="chartbtn" aria-haspopup="dialog" data-ja="天気図" data-en="Chart"
+            data-ja-title="気象庁の天気図を開く" data-en-title="Open the JMA weather chart">天気図</button>
+  </div>
+
+  <div class="opts" id="opts" hidden>
+    <label class="wide" for="layer" data-ja="表示するデータ" data-en="Data">表示するデータ</label>
+    <select id="layer" class="wide">
+      <optgroup data-ja-label="ナウキャスト" data-en-label="Nowcast" label="ナウキャスト">
+        <option value="raincloud" selected data-ja="雨雲の動き" data-en="Rain">雨雲の動き</option>
+        <option value="thunder" data-ja="雷活動度" data-en="Lightning">雷活動度</option>
+        <option value="tornado" data-ja="竜巻発生確度" data-en="Tornado">竜巻発生確度</option>
+      </optgroup>
+      <optgroup data-ja-label="ひまわり" data-en-label="Himawari satellite" label="ひまわり">
+        <option value="sat-ir" data-ja="赤外画像" data-en="Infrared">赤外画像</option>
+        <option value="sat-vis" data-ja="可視画像" data-en="Visible">可視画像</option>
+        <option value="sat-truecolor" data-ja="トゥルーカラー" data-en="True color">トゥルーカラー</option>
+      </optgroup>
+      <optgroup data-ja-label="今後の雨" data-en-label="Rainfall forecast" label="今後の雨">
+        <option value="rain1h" data-ja="1時間降水量" data-en="1-hour rainfall">1時間降水量</option>
+        <option value="rain3h" data-ja="3時間降水量" data-en="3-hour rainfall">3時間降水量</option>
+        <option value="rain24h" data-ja="24時間降水量" data-en="24-hour rainfall">24時間降水量</option>
+      </optgroup>
+      <optgroup data-ja-label="天気予報分布" data-en-label="Distribution forecast" label="天気予報分布">
+        <option value="weather" data-ja="天気" data-en="Weather">天気</option>
+        <option value="temp" data-ja="気温" data-en="Temperature">気温</option>
+        <option value="r3" data-ja="3時間降水量" data-en="Rainfall, 3 hours">3時間降水量</option>
+        <option value="s3" data-ja="3時間降雪量" data-en="Snowfall, 3 hours">3時間降雪量</option>
+        <option value="max-temp" data-ja="日中の最高気温" data-en="Daytime high">日中の最高気温</option>
+        <option value="min-temp" data-ja="朝の最低気温" data-en="Morning low">朝の最低気温</option>
+      </optgroup>
+      <optgroup data-ja-label="雪" data-en-label="Snow" label="雪">
+        <option value="snowd" data-ja="積雪の深さ" data-en="Snow depth">積雪の深さ</option>
+        <option value="snow24h" data-ja="24時間降雪量" data-en="Snowfall, 24 hours">24時間降雪量</option>
+      </optgroup>
+      <optgroup data-ja-label="危険度分布（キキクル）" data-en-label="Kikikuru risk map" label="危険度分布（キキクル）">
+        <option value="land" data-ja="土砂災害" data-en="Landslide">土砂災害</option>
+        <option value="inund" data-ja="浸水害" data-en="Inundation">浸水害</option>
+      </optgroup>
+    </select>
+
+    <label for="opacity" data-ja="濃さ" data-en="Opacity">濃さ</label>
+    <input type="range" id="opacity" min="0.2" max="1" step="0.05" value="0.75">
+
+    <label for="interval" data-ja="更新間隔" data-en="Refresh">更新間隔</label>
+    <select id="interval">
+      <option value="60" data-ja="1分" data-en="1 min">1分</option>
+      <option value="180" data-ja="3分" data-en="3 min">3分</option>
+      <option value="300" selected data-ja="5分" data-en="5 min">5分</option>
+      <option value="600" data-ja="10分" data-en="10 min">10分</option>
+    </select>
+
+    <label class="check wide" for="keys">
+      <input type="checkbox" id="keys" checked>
+      <span data-ja="キーボード操作を使う（←→でコマ送り、スペースで再生と停止）"
+            data-en="Use keyboard shortcuts (arrow keys to step, space to play or pause)">キーボード操作を使う（←→でコマ送り、スペースで再生と停止）</span>
+    </label>
+
+    <div class="actions">
+      <button id="refresh" data-ja="今すぐ更新" data-en="Refresh now">今すぐ更新</button>
+      <button id="locate" data-ja="現在地へ移動" data-en="Center on me">現在地へ移動</button>
+    </div>
+
+    <span class="wide" id="source"></span>
+    <span class="credit">
+      <span data-ja="出典：気象庁、国土地理院、Open-Meteo（等圧線）　制作：" data-en="Source: JMA, GSI and Open-Meteo (isobars). Built by ">出典：気象庁、国土地理院、Open-Meteo（等圧線）　制作：</span><a href="https://www.5garashi.com" target="_blank" rel="noopener" data-ja="5garashi.com設計事務所" data-en="5garashi.com Design Office">5garashi.com設計事務所</a>
     </span>
-  </div>
-</header>
-
-<main id="mainContent" tabindex="-1">
-  <div class="qcard" role="region" aria-label="問題と答え">
-    <div class="qmeta">
-      <span class="qnum" id="qnum">問 1</span>
-      <span class="qcat" id="qcat"></span>
-    </div>
-    <div class="qtext" id="qtext">▶ を押すと再生が始まります。音量をオンにしてください。</div>
-    <div class="answer" id="ansbox">
-      <span class="val" id="ansval">–</span>
-      <span class="memo" id="ansmemo"></span>
-    </div>
-    <div class="flags">
-      <label class="learned"><input type="checkbox" id="learnedChk">✓ 覚えた!（スキップ）</label>
-      <label class="yabai"><input type="checkbox" id="yabaiChk">! ヤバイ!（要復習）</label>
-    </div>
-  </div>
-
-  <div class="stage">
-    <button class="skip" id="prevBtn" aria-label="前の問題">⏮</button>
-    <div class="playwrap">
-      <svg class="ring" viewBox="0 0 112 112">
-        <circle class="bg" cx="56" cy="56" r="52"></circle>
-        <circle class="fg" id="ringfg" cx="56" cy="56" r="52"></circle>
-      </svg>
-      <button id="playBtn" aria-label="再生">▶</button>
-    </div>
-    <button class="skip" id="nextBtn" aria-label="次の問題">⏭</button>
-  </div>
-  <div class="stage-label" id="stageLabel">停止中</div>
-
-  <div class="progress">
-    <span id="progText">0 / 0</span>
-    <div class="bar"><i id="progBar"></i></div>
-  </div>
-
-  <div class="panel">
-    <h2 class="panel-title full">学習設定 <small>STUDY SETTINGS</small></h2>
-    <div class="field full">
-      <label>内蔵の問題セット（全問題モード対応）</label>
-      <select id="setSel"></select>
-    </div>
-    <div class="field full">
-      <label>出題範囲</label>
-      <select id="rangeSel"></select>
-    </div>
-    <div class="field">
-      <label>考える間(ポーズ)</label>
-      <select id="pauseSel">
-        <option value="1" selected>1秒</option>
-        <option value="2">2秒</option>
-        <option value="4">4秒</option>
-        <option value="7">7秒</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>読み上げ速度</label>
-      <select id="rateSel">
-        <option value="0.9">ゆっくり</option>
-        <option value="1.1">ふつう</option>
-        <option value="1.3">速め</option>
-        <option value="1.6">高速</option>
-        <option value="2.0" selected>超高速</option>
-      </select>
-    </div>
-    <div class="field full toggles">
-      <label class="tgl"><input type="checkbox" id="shuffleChk">シャッフル</label>
-      <label class="tgl"><input type="checkbox" id="loopChk" checked>くり返し再生</label>
-      <label class="tgl"><input type="checkbox" id="echoChk" checked>答えのあと復唱</label>
-      <label class="tgl"><input type="checkbox" id="kaisetsuChk" checked>解説を読み上げ</label>
-      <label class="tgl"><input type="checkbox" id="yabaiOnlyChk">ヤバイ!だけ再生</label>
-    </div>
-    <div class="field full toggles">
-      <span class="statline" id="learnedStat">覚えた:0問</span>
-      <button class="minibtn" id="resetLearned">覚えたを全解除</button>
-      <span class="statline" id="yabaiStat">ヤバイ:0問</span>
-      <button class="minibtn" id="resetYabai">ヤバイを全解除</button>
-    </div>
-  </div>
-
-  <div class="importbox">
-    <h2>外部テキストの読み込み <small>IMPORT TEXT</small></h2>
-    <div class="importrow">
-      <button class="minibtn" id="fileBtn">テキストファイルを選ぶ</button>
-      <button class="minibtn" id="pasteBtn">貼り付けて読み込む</button>
-      <button class="minibtn" id="builtinBtn">内蔵セットを再読み込み</button>
-      <button class="minibtn" id="yomiResetBtn">内蔵の変換表に戻す</button>
-      <input type="file" id="fileInput" accept=".txt,text/plain" style="display:none">
-    </div>
-    <textarea id="pasteArea" placeholder="ここに原稿を貼り付けて、下の「この内容を読み込む」を押してください"></textarea>
-    <button class="minibtn" id="pasteLoadBtn" style="display:none">この内容を読み込む</button>
-    <div class="importstatus" id="importStatus"></div>
-    <div class="importhint">
-      問題テキストのフォーマット(1問=1行):<br>
-      <code>問1。低圧架空電線が、道路を横断する場合。路面上、何メートル以上。、、、答えは、6メートル。解説、道路横断は最も高い6メートル。</code><br>
-      「解説、~。」は任意です。書いておくと、答えのあとに画面表示と読み上げがされます。<br>
-      「問○。」で始まり「答えは、○○。」で終わる行だけを問題として読み込みます。それ以外の行(説明文・空行)は無視されるので、いまお使いの読み上げ原稿がそのまま使えます。<br><br>
-      読み上げ変換表:誤読する単語の読みを直せます。ファイル名が<code>読み上げ変換表</code>で始まるtxt(貼り付けの場合は1行目に「読み上げ変換表」と書く)を読み込むと、内蔵の変換表と置き換わります。1行1件で<code>歩道橋→ホドウキョウ</code>のように書き、#で始まる行はコメント、行頭に<code>re:</code>を付けると正規表現が使えます。
-    </div>
-  </div>
-</main>
-
-
-<div id="helpOverlay" role="dialog" aria-modal="true" aria-label="使い方">
-  <div class="helpcard">
-    <h2>使い方</h2>
-    <b>再生の流れ</b>:▶で「問題 → 考える間 → 答え+解説」を自動で進めます。問題セットで「全問題を1周（法規＋電力）」を選ぶと、全内蔵問題を1回ずつ再生し、シャッフル時は全問題が対象になります。
-    問題や考える間の途中で⏸→▶を押すと、続きを聞かずに<b>答えへスキップ</b>。
-    答えの読み上げ中の⏸→▶は<b>続きから再開</b>します。⏮⏭は問題の頭から移動します。
-    <h3>チェックの使い分け</h3>
-    <b style="color:var(--ok)">覚えた!</b>:くり返し時にスキップ(ページを閉じるとリセット)。<br>
-    <b style="color:var(--volt-deep)">ヤバイ!</b>:要復習マーク。ブラウザに保存され次回も残ります。
-    「ヤバイ!だけ再生」で弱点だけを周回できます。
-    <h3>問題の追加</h3>
-    「問1。問題文。、、、答えは、○○。解説、△△。」の形式(1問1行)のtxtを読み込めます。
-    ファイル名が「読み上げ変換表」で始まるtxtは、誤読修正の変換表として取り込まれます。単位は [kW]、[V]、[A] のように記載し、読み上げ時だけ日本語へ変換します。
-    <h3>ショートカットキー</h3>
-    <table>
-      <tr><td class="k">スペース</td><td>再生 / 一時停止 / 再開</td></tr>
-      <tr><td class="k">Enter または A</td><td>答えへスキップ(再生中いつでも)</td></tr>
-      <tr><td class="k">← / →</td><td>前の問題 / 次の問題</td></tr>
-      <tr><td class="k">M</td><td>覚えた! を付け外し</td></tr>
-      <tr><td class="k">Y</td><td>ヤバイ! を付け外し</td></tr>
-      <tr><td class="k">O</td><td>ヤバイ!だけ再生 の切替</td></tr>
-      <tr><td class="k">S / R</td><td>シャッフル / くり返し の切替</td></tr>
-      <tr><td class="k">E / D</td><td>復唱 / 解説読み上げ の切替</td></tr>
-      <tr><td class="k">1 2 3 4</td><td>考える間を 1・2・4・7秒 に設定</td></tr>
-      <tr><td class="k">↑ / ↓</td><td>読み上げ速度を 上げる / 下げる</td></tr>
-      <tr><td class="k">H または ?</td><td>このヘルプを表示 / 閉じる</td></tr>
-      <tr><td class="k">Esc</td><td>ヘルプを閉じる</td></tr>
-    </table>
-    <button class="helpclose" id="helpClose">閉じる(Esc)</button>
   </div>
 </div>
 
-<footer>
-  問題・考える間に一時停止して再開すると、答えへ移動します。答えの読み上げ中は、続きから再開します。<br>
-  <span class="warn">画面をロックすると音声が止まる</span>ことがあります。スマートフォンでは画面をオンにしたまま使用してください。<br>
-  「ヤバイ!」はブラウザに保存されます。「覚えた」と読み込んだ問題は、ページを閉じるとリセットされます。
-  <span class="footer-signature">5garashi.com設計事務所 / 5garashi.com Design Office — v11 — 2026-07-12 — MIT License</span>
-</footer>
-
 <script>
-// 作成者 / Author: 5garashi.com設計事務所 / 5garashi.com Design Office
-// ライセンス / License: MIT
-// SPDX-License-Identifier: MIT
-
-// ---------- 内蔵データ(7セット・読み上げ原稿フォーマットのまま埋め込み) ----------
-const BUILTIN_SETS = [
-  {subj:"法規", name:"距離", text:`電験三種 法規 距離の数値 53問 読み上げ原稿
-
-【使い方】
-このテキストを丸ごとコピーして、以下のいずれかに貼り付けてください。
-・iPhone:設定 → アクセシビリティ → 読み上げコンテンツ →「画面の読み上げ」をオン → メモに貼り付けて画面上部から2本指で下にスワイプ
-・Android:設定 → ユーザー補助 →「選択して読み上げ」
-・VOICEVOX(PC・無料):貼り付けて音声ファイル(wav)に書き出し → スマホに転送
-句点「。」で自然に間が空きます。考える時間がもっと欲しい場合は、答えの前の「、、、」を「。。。。」などに増やしてください。
-
-ここから本文。
-
-問1。低圧、高圧の架空電線が、道路を横断する場合。路面上、何 [m]以上。、、、答えは、6 [m]。解説、道路横断は最も高い6 [m]。6、5.5、5の基本。
-
-問2。低高圧架空電線が、鉄道または軌道を横断する場合。レール面上、何 [m]以上。、、、答えは、5.5 [m]。解説、レール面上は5.5 [m]。道路より0.5低い。
-
-問3。低圧架空電線を、横断歩道橋の上に施設する場合。路面上、何 [m]以上。、、、答えは、3 [m]。解説、歩道橋の上は低圧3 [m]。
-
-問4。高圧架空電線を、横断歩道橋の上に施設する場合。路面上、何 [m]以上。、、、答えは、3.5 [m]。解説、高圧は低圧より0.5高く、3.5 [m]。
-
-問5。低高圧架空電線。その他、一般の場所では、地表上、何 [m]以上。、、、答えは、5 [m]。解説、一般の場所の原則値は5 [m]。
-
-問6。低圧架空電線で、道路以外、交通に支障がない場合。何 [m]まで緩和できる。、、、答えは、4 [m]。解説、緩和は低圧だけ。高圧に緩和はない。
-
-問7。直接埋設式の地中電線路。重量物の圧力を受けるおそれがある場所。埋設の深さは、何 [m]以上。、、、答えは、1.2 [m]。解説、車道の下など、重量物ありは1.2 [m]。
-
-問8。直接埋設式で、その他の場所。埋設の深さは、何 [m]以上。、、、答えは、0.6 [m]。解説、重量物なしは半分の0.6 [m]。
-
-問9。低圧または高圧の地中電線と、地中弱電流電線との離隔距離は、何 [m]以上。、、、答えは、0.3 [m]。解説、低高圧と弱電流は0.3 [m]。
-
-問10。特別高圧の地中電線と、地中弱電流電線との離隔距離は、何 [m]以上。、、、答えは、0.6 [m]。解説、特別高圧は倍の0.6 [m]。
-
-問11。低圧の地中電線と、高圧の地中電線との離隔距離は、何 [m]以上。、、、答えは、0.15 [m]。解説、低圧と高圧の地中相互は0.15 [m]。
-
-問12。低高圧の地中電線と、特別高圧の地中電線との離隔距離は、何 [m]以上。、、、答えは、0.3 [m]。解説、特別高圧がからむと0.3 [m]。
-
-問13。使用電圧35 [kV]以下。さく、へいの高さと、充電部分までの距離の和は、何 [m]以上。、、、答えは、5 [m]。解説、35 [kV]以下は、高さと距離の和で5 [m]。
-
-問14。使用電圧35 [kV]を超え、160 [kV]以下。高さと距離の和は、何 [m]以上。、、、答えは、6 [m]。解説、160 [kV]以下は6 [m]。
-
-問15。発電所のさく、へいの、高さと充電部までの距離の和。使用電圧が160 [kV]を超える場合、6 [m]に、超過10 [kV]ごとに、何 [m]加算する。、、、答えは、0.12 [m]。解説、超過10 [kV]ごと、端数切り上げで加算。
-
-問16。使用電圧220 [kV]のとき。高さと距離の和は、何 [m]以上。、、、答えは、6.72 [m]。解説、超過60を10でわって6区分。6 + 6×0.12。
-
-問17。低圧架空引込線が、道路を横断する場合。路面上、何 [m]以上。、、、答えは、5 [m]。解説、引込線は本線の6 [m]よりゆるく、5 [m]。
-
-問18。低圧架空引込線が、鉄道または軌道を横断する場合。レール面上、何 [m]以上。、、、答えは、5.5 [m]。解説、鉄道は引込線でも5.5 [m]のまま。
-
-問19。低圧架空引込線を、横断歩道橋の上に施設する場合。路面上、何 [m]以上。、、、答えは、3 [m]。解説、歩道橋の上は本線の低圧と同じ3 [m]。
-
-問20。低圧架空引込線。技術上やむを得ず、交通に支障がない場合の、最小の高さは、何 [m]。、、、答えは、2.5 [m]。解説、引込線の最小値は2.5 [m]。
-
-問21。高圧架空引込線。電線の下面に、危険である旨の表示をした場合。何 [m]以上まで緩和できる。、、、答えは、3.5 [m]。解説、危険表示とセットで3.5 [m]まで緩和。
-
-問22。低高圧架空電線と、建造物の上部造営材の、上方との離隔距離は、何 [m]以上。、、、答えは、2 [m]。解説、屋根など上部造営材の上方は2 [m]。
-
-問23。高圧架空電線に、ケーブルを使用する場合。上部造営材の上方との離隔は、何 [m]以上。、、、答えは、1 [m]。解説、ケーブルなら上方は1 [m]に半減。
-
-問24。低高圧架空電線と、建造物の造営材、側方や下方との離隔距離は、何 [m]以上。、、、答えは、1.2 [m]。解説、側方や下方は1.2 [m]。
-
-問25。ケーブルを使用する場合。造営材の、上方以外との離隔は、何 [m]以上。、、、答えは、0.4 [m]。解説、ケーブルなら0.4 [m]。
-
-問26。使用電圧35 [kV]以下の、特別高圧架空電線と、建造物との離隔距離は、何 [m]以上。、、、答えは、3 [m]。解説、35 [kV]以下の特別高圧と建造物は3 [m]。
-
-問27。使用電圧35 [kV]以下の、特別高圧架空電線が、道路を横断する場合。路面上、何 [m]以上。、、、答えは、6 [m]。解説、35 [kV]以下は低高圧と同じ6 [m]。
-
-問28。35 [kV]を超え、160 [kV]以下の、特別高圧架空電線。一般の場所で、地表上、何 [m]以上。、、、答えは、6 [m]。解説、一般は6 [m]。山地などは5 [m]。
-
-問29。160 [kV]を超える、特別高圧架空電線の、地表上の高さ。6 [m]に、超過10 [kV]ごとに、何 [m]加算する。、、、答えは、0.12 [m]。解説、さく、へいと同じ加算ルール。
-
-問30。使用電圧500 [kV]の、特別高圧架空電線。一般の場所で、地表上、何 [m]以上。、、、答えは、10.08 [m]。解説、超過340を10でわって34区分。6 + 34×0.12。
-
-問31。低圧架空電線と、架空弱電流電線との離隔距離は、何 [m]以上。、、、答えは、0.6 [m]。解説、低圧と弱電流は0.6。ケーブルなら0.3。
-
-問32。高圧架空電線と、架空弱電流電線との離隔距離は、何 [m]以上。、、、答えは、0.8 [m]。解説、高圧は0.8。ケーブルなら0.4。
-
-問33。高圧架空電線どうしが、接近、交差する場合の離隔距離は、何 [m]以上。、、、答えは、0.8 [m]。解説、高圧どうしも0.8 [m]。
-
-問34。低圧架空電線と、高圧架空電線との離隔距離は、何 [m]以上。、、、答えは、0.8 [m]。解説、高圧がからむ接近は0.8 [m]。
-
-問35。低圧架空電線と、アンテナとの離隔距離は、何 [m]以上。、、、答えは、0.6 [m]。解説、アンテナは弱電流電線と同じあつかい。
-
-問36。高圧架空電線と、アンテナとの離隔距離は、何 [m]以上。、、、答えは、0.8 [m]。解説、高圧なら同じく0.8 [m]。
-
-問37。低圧架空電線と、高圧架空電線を、同一支持物に施設する、併架の場合。離隔距離は、何 [m]以上。、、、答えは、0.5 [m]。解説、同一支持物の併架は0.5 [m]。
-
-問38。低圧架空電線と、架空弱電流電線を共架する場合。離隔距離は、何 [m]以上。、、、答えは、0.75 [m]。解説、共架の低圧は0.75 [m]。
-
-問39。高圧架空電線と、架空弱電流電線を共架する場合。離隔距離は、何 [m]以上。、、、答えは、1.5 [m]。解説、共架の高圧は倍の1.5 [m]。
-
-問40。昇塔防止のため、足場金具などは、地表上、何 [m]以上の高さに施設する。、、、答えは、1.8 [m]。解説、昇塔防止の定番、1.8 [m]。
-
-問41。道路を横断して施設する支線の高さは、路面上、何 [m]以上。、、、答えは、5 [m]。解説、支線も道路横断は5 [m]。
-
-問42。高圧架空電線路。A種鉄筋コンクリート柱や、木柱の径間は、何 [m]以下。、、、答えは、150 [m]。解説、径間は、A種と木柱が150 [m]。
-
-問43。B種鉄筋コンクリート柱、B種鉄柱の径間は、何 [m]以下。、、、答えは、250 [m]。解説、B種は250 [m]。
-
-問44。鉄塔を支持物とする場合の径間は、何 [m]以下。、、、答えは、600 [m]。解説、鉄塔は600。150、250、600のセット。
-
-問45。架空ケーブルを、ちょう架用線にハンガーで支持する場合。ハンガーの間隔は、何 [m]以下。、、、答えは、0.5 [m]。解説、ハンガー間隔は50センチ以下。
-
-問46。接地極は、地下、何 [m]以上の深さに埋設する。、、、答えは、0.75 [m]。解説、接地極は75センチ以上の深さに埋設。
-
-問47。接地線は、地下0.75 [m]から、地表上、何 [m]までを、合成樹脂管などで覆う。、、、答えは、2 [m]。解説、地下0.75から地上2 [m]まで保護管でおおう。
-
-問48。接地極を、鉄柱などに近接して施設する場合。底面から0.3 [m]以上深くするか、金属体から、何 [m]以上離す。、、、答えは、1 [m]。解説、0.3 [m]深くするか、1 [m]離す。
-
-問49。市街地に施設する、高圧の機械器具は、地表上、何 [m]以上の高さに施設する。、、、答えは、4.5 [m]。解説、市街地は4.5。市街地外は4 [m]。
-
-問50。がいし引き工事による、低圧屋内配線。電線相互の間隔は、何 [cm]以上。、、、答えは、6 [cm]。解説、電線相互6センチ。造営材とは2.5センチ。
-
-問51。低圧架空引込線が、道路を横断する場合。技術上やむを得ず、交通に支障がないとき、路面上、何 [m]以上まで緩和できる。、、、答えは、3 [m]。解説、通常は5 [m]以上。技術上やむを得ず、交通に支障がない場合は、3 [m]以上まで緩和できる。
-
-問52。低圧架空引込線で、道路横断、鉄道・軌道横断、横断歩道橋上以外の場合。技術上やむを得ず、交通に支障がないとき、地表上、何 [m]以上まで緩和できる。、、、答えは、2.5 [m]。解説、通常は4 [m]以上。技術上やむを得ず、交通に支障がない場合は、2.5 [m]以上まで緩和できる。
-
-問53。高圧架空引込線で、道路横断、鉄道・軌道横断、横断歩道橋上以外の場合。地表上、何 [m]以上まで緩和できる。、、、答えは、3.5 [m]。解説、通常は5 [m]以上。高圧架空引込線にも緩和がある。ただし、ケーブル以外の電線では、その下方に危険表示が必要。
-
-以上、53問。おつかれさまでした。`},
-  {subj:"法規", name:"電力", text:`電験三種 法規 電力の数値 35問 読み上げ原稿
-
-【使い方】
-プレーヤーの「テキストファイルを選ぶ」または「貼り付けて読み込む」でこのファイルを読み込んでください。
-「問○。~答えは、○○。」の行だけが問題として読み込まれます。
-前半は条文の出力数値(暗記)、後半は施設管理の計算問題(暗算できるレベル)です。
-計算問題は考える間を7秒にするのがおすすめです。
-
-ここから本文。
-
-問1。太陽電池発電設備で、一般用電気工作物となる出力の範囲は、原則として何 [kW]未満。、、、答えは、10 [kW]。解説、低圧で受電する需要設備に接続する太陽電池発電設備は、原則として10 [kW]未満なら一般用電気工作物となる。
-
-問2。太陽電池発電設備で、小規模事業用電気工作物となる出力の範囲は、10 [kW]以上、何 [kW]未満。、、、答えは、50 [kW]。解説、原則として10 [kW]以上50 [kW]未満が小規模事業用電気工作物となる。
-
-問3。風力発電設備で、小規模事業用電気工作物となるのは、出力何 [kW]未満。、、、答えは、20 [kW]。解説、原則として出力20 [kW]未満の風力発電設備が対象となる。
-
-問4。ダムを伴わない水力発電設備が、小出力発電設備となるのは、出力何 [kW]未満。、、、答えは、20 [kW]。解説、小出力発電設備としてのダムを伴わない水力は、20 [kW]未満。
-
-問5。内燃力を原動力とする火力発電設備が、小出力発電設備となるのは、出力何 [kW]未満。、、、答えは、10 [kW]。解説、内燃力発電設備は10 [kW]未満。
-
-問6。燃料電池発電設備が、小出力発電設備となるのは、出力何 [kW]未満。、、、答えは、10 [kW]。解説、燃料電池発電設備は10 [kW]未満。
-
-問7。スターリングエンジン発電設備が、小出力発電設備となるのは、出力何 [kW]未満。、、、答えは、10 [kW]。解説、スターリングエンジン発電設備は10 [kW]未満。
-
-問8。小出力発電設備は、同一構内の設備の出力の合計が、何 [kW]未満であることが必要。、、、答えは、50 [kW]。解説、小出力発電設備の出力合計は50 [kW]未満。
-
-問9。第三種電気主任技術者が、保安の監督をできる範囲から除かれるのは、出力何 [kW]以上の発電所。、、、答えは、5000 [kW]。解説、三種は5万 [V]未満、かつ5000 [kW]未満。
-
-問10。外部委託承認制度の対象となる太陽電池発電所または蓄電所は、原則として出力何 [kW]未満。、、、答えは、5000 [kW]。解説、電圧7000 [V]以下で連系等をする、出力5000 [kW]未満の太陽電池発電所または蓄電所が対象となる。
-
-問11。工事計画の事前届出が必要となる、太陽電池発電所は、出力何 [kW]以上。、、、答えは、2000 [kW]。解説、太陽電池は2000 [kW]以上で事前届出。
-
-問12。工事計画の事前届出が必要となる、風力発電所は、出力何 [kW]以上。、、、答えは、500 [kW]。解説、風力は500 [kW]以上で事前届出。
-
-問13。設備容量500 [kW]、需要率60 [%]。最大需要電力は、何 [kW]。、、、答えは、300 [kW]。解説、最大は設備×需要率。500×0.6。
-
-
-問14。設備容量1000 [kW]、需要率45 [%]。最大需要電力は、何 [kW]。、、、答えは、450 [kW]。解説、1000×0.45で450。
-
-問15。最大需要電力400 [kW]、負荷率75 [%]。平均電力は、何 [kW]。、、、答えは、300 [kW]。解説、平均は最大×負荷率。400×0.75。
-
-問16。最大需要電力600 [kW]、負荷率50 [%]。平均電力は、何 [kW]。、、、答えは、300 [kW]。解説、600×0.5で300。
-
-問17。平均電力240 [kW]、負荷率60 [%]。最大需要電力は、何 [kW]。、、、答えは、400 [kW]。解説、最大は平均/負荷率。240/0.6。
-
-問18。平均電力180 [kW]、負荷率90 [%]。最大需要電力は、何 [kW]。、、、答えは、200 [kW]。解説、180/0.9で200。
-
-問19。1日の使用電力量が、4800 [kWh]。平均電力は、何 [kW]。、、、答えは、200 [kW]。解説、4800/24 [h]で200。
-
-
-問20。30日間の使用電力量が、21万6000 [kWh]。平均電力は、何 [kW]。、、、答えは、300 [kW]。解説、21万6000/720 [h]で300。
-
-問21。需要家Aの最大需要電力300 [kW]、需要家Bは500 [kW]、不等率1.25。合成最大需要電力は、何 [kW]。、、、答えは、640 [kW]。解説、合成は和/不等率。800/1.25。
-
-問22。各需要家の最大需要電力の合計が1200 [kW]、不等率1.2。合成最大需要電力は、何 [kW]。、、、答えは、1000 [kW]。解説、1200/1.2で1000。
-
-
-問23。合成最大需要電力600 [kW]、不等率1.15。各需要家の最大需要電力の合計は、何 [kW]。、、、答えは、690 [kW]。解説、和は合成×不等率。600×1.15。
-
-問24。設備容量2000 [kW]、需要率40 [%]、負荷率60 [%]。平均電力は、何 [kW]。、、、答えは、480 [kW]。解説、最大は800。800×0.6で480。
-
-問25。設備容量1500 [kW]、需要率60 [%]、負荷率50 [%]。平均電力は、何 [kW]。、、、答えは、450 [kW]。解説、最大は900。900×0.5で450。
-
-
-
-問26。最大需要電力380 [kW]、力率95 [%]。必要な変圧器容量は、何 [kVA]。、、、答えは、400 [kVA]。解説、容量は電力/力率。380/0.95。
-
-
-
-
-問27。設備容量600 [kW]、需要率64 [%]、負荷の力率96 [%]。必要な変圧器容量は、何 [kVA]。、、、答えは、400 [kVA]。解説、最大は384。384/0.96で400。
-
-問28。300 [kVA]の変圧器を、力率85 [%]で全負荷運転。供給できる有効電力は、何 [kW]。、、、答えは、255 [kW]。解説、電力は容量×力率。300×0.85。
-
-
-問29。100 [kVA]の単相変圧器、2台をV結線した場合。供給できる容量は、約何 [kVA]。、、、答えは、約173 [kVA]。解説、V結線は√3×1台分。2倍にはならない。
-
-
-
-
-問30。負荷120 [kW]、力率60 [%]を、80 [%]に改善する。必要なコンデンサ容量は、何 [kvar]。、、、答えは、70 [kvar]。解説、tanの差は約0.58。120×0.58。
-
-
-
-問31。皮相電力500 [kVA]、力率80 [%]の負荷。無効電力は、何 [kvar]。、、、答えは、300 [kvar]。解説、無効電力は皮相×sin。500×0.6。
-
-
-
-
-
-
-問32。外部委託承認制度の対象となる水力、火力または風力発電所は、原則として出力何 [kW]未満。、、、答えは、2000 [kW]。解説、電圧7000 [V]以下で連系等をする、出力2000 [kW]未満の水力、火力または風力発電所が対象となる。
-問33。外部委託承認制度の対象となる、太陽電池、水力、火力、風力以外の発電所は、原則として出力何 [kW]未満。、、、答えは、1000 [kW]。解説、電圧7000 [V]以下で連系等をする、出力1000 [kW]未満のその他の発電所が対象となる。
-問34。小規模事業用電気工作物の設置者に課される主な義務は、技術基準適合維持、基礎情報の届出と、もう一つは何。、、、答えは、使用前自己確認。解説、技術基準適合維持、基礎情報の届出、使用前自己確認の3つを覚える。
-問35。高圧受電設備に接続された出力10 [kW]以上50 [kW]未満の太陽電池発電設備は、何の一部として扱われる。、、、答えは、自家用電気工作物。解説、高圧または特別高圧受電設備に接続される場合は、小規模事業用電気工作物ではなく、自家用電気工作物の一部となる。
-
-
-以上、35問。おつかれさまでした。`},
-  {subj:"法規", name:"電流", text:`電験三種 法規 電流の数値 40問 読み上げ原稿
-
-【使い方】
-プレーヤーの「テキストファイルを選ぶ」または「貼り付けて読み込む」で読み込んでください。
-「問○。~答えは、○○。」の行だけが問題として読み込まれます。
-構成:漏えい電流 → B種接地の地絡電流 → 漏電遮断器 → 幹線の設計計算 → 分岐回路 → 遮断器の動作特性 → 小勢力回路 → 電流計算。
-問18以降は計算が多いので、考える間は7秒がおすすめです。
-
-ここから本文。
-
-問1。低圧電路で、絶縁抵抗測定が困難な場合。漏えい電流を、何 [mA]以下に保つ。、、、答えは、1 [mA]。解説、測定できないときは漏えい1 [mA]で代用。
-
-問2。低圧電線路で、最大供給電流が200 [A]のとき、漏えい電流の上限は、何 [mA]。、、、答えは、100 [mA]。解説、漏えい電流は、最大供給電流の2000分の1以下。200 / 2000で0.1 [A]。
-
-
-
-問3。単相2線式100 [V]、変圧器容量5 [kVA]。最大供給電流は、何 [A]。、、、答えは、50 [A]。解説、5000 [VA] / 100 [V]。
-
-問4。その電線路の、漏えい電流の上限は、何 [mA]。、、、答えは、25 [mA]。解説、50/2000で0.025 [A]。
-
-問5。単相2線式100 [V]、変圧器容量10 [kVA]。最大供給電流は、何 [A]。、、、答えは、100 [A]。解説、1万/100で100 [A]。
-
-
-問6。B種接地工事。原則の場合で、接地抵抗値が30 [Ω]のとき、高圧側の1線地絡電流は、何 [A]。、、、答えは、5 [A]。解説、原則の式は、150/Ig。Igは、150/30で5 [A]。
-
-問7。B種接地工事、原則の場合で、接地抵抗値が75 [Ω]。1線地絡電流は、何 [A]。、、、答えは、2 [A]。解説、150/Igの式。150/75で2 [A]。
-
-
-問8。B種接地工事。1 [s]を超え2 [s]以内に、自動遮断する装置がある場合で、接地抵抗値が60 [Ω]。1線地絡電流は、何 [A]。、、、答えは、5 [A]。解説、この場合の式は、300/Ig。300/60で5 [A]。
-
-問9。1 [s]以内に自動遮断する装置がある場合で、接地抵抗値が100 [Ω]。1線地絡電流は、何 [A]。、、、答えは、6 [A]。解説、この場合は、600/Ig。600/100で6 [A]。
-
-問10。1 [s]を超え2 [s]以内に遮断する装置がある場合で、接地抵抗値が50 [Ω]。1線地絡電流は、何 [A]。、、、答えは、6 [A]。解説、300/Igの式。300/50で6 [A]。
-
-問11。低圧用の機械器具を、水気のある場所以外に施設するとき、金属製外箱の接地工事を省略できるのは、電路に、定格感度電流、何 [mA]以下で、動作時間0.1 [s]以下の漏電遮断器を施設する場合。、、、答えは、15 [mA]。解説、15 [mA]、0.1 [s]の高感度高速形。水気のある場所では省略できない。
-
-問12。高感度形漏電遮断器の、定格感度電流は、何 [mA]以下。、、、答えは、30 [mA]。解説、高感度形の定義は30 [mA]以下。
-
-問13。電気さく用電源装置の電路に施設する漏電遮断器は、定格感度電流、何 [mA]以下で、動作時間0.1 [s]以下。、、、答えは、15 [mA]。解説、電気さくも15 [mA]、0.1 [s]。
-
-問14。幹線の設計。電動機の定格電流の合計20 [A]、他の負荷30 [A]。幹線の許容電流は、何 [A]以上。、、、答えは、50 [A]。解説、電動機の合計が、他の負荷以下のときは、割増不要。20+30で50 [A]。
-
-問15。電動機の合計40 [A]、他の負荷10 [A]。幹線の許容電流は、何 [A]以上。、、、答えは、60 [A]。解説、1.25×40 + 10で60。
-
-
-問16。電動機の合計60 [A]、他の負荷なし。幹線の許容電流は、何 [A]以上。、、、答えは、66 [A]。解説、50 [A]を超えるので1.1倍。1.1×60で66 [A]。
-
-問17。電動機の合計80 [A]、他の負荷12 [A]。幹線の許容電流は、何 [A]以上。、、、答えは、100 [A]。解説、1.1×80 + 12で100。
-
-
-問18。幹線の過電流遮断器。電動機の定格電流の合計30 [A]、他の負荷10 [A]。過電流遮断器の定格電流は、何 [A]以下。、、、答えは、100 [A]。解説、上限は、電動機の3倍 + 他の負荷。3×30 + 10で100 [A]。
-
-問19。電動機の合計20 [A]、他の負荷40 [A]。幹線の過電流遮断器の定格は、何 [A]以下。、、、答えは、100 [A]。解説、3倍+他の負荷。3×20 + 40で100 [A]。
-
-問20。電動機の合計30 [A]、他の負荷なし。幹線の過電流遮断器の定格は、何 [A]以下。、、、答えは、90 [A]。解説、3×30で90。
-
-問21。電動機がある幹線で、幹線の許容電流が100 [A]。過電流遮断器の定格電流の、もう一つの上限は、何 [A]。、、、答えは、250 [A]。解説、上限は、幹線の許容電流の2.5倍以下。100×2.5で250 [A]。
-
-問22。電動機がない幹線で、許容電流80 [A]。過電流遮断器の定格は、何 [A]以下。、、、答えは、80 [A]。解説、電動機なしは許容電流そのまま。
-
-問23。定格20 [A]の配線用遮断器で保護される分岐回路。接続できるコンセントの定格は、何 [A]以下。、、、答えは、20 [A]。解説、配線用遮断器20 [A]の分岐は20以下。
-
-問24。30 [A]分岐回路。接続できるコンセントの定格の、上限は、何 [A]。、、、答えは、30 [A]。解説、30 [A]分岐の上限は30。
-
-問25。30 [A]分岐回路。接続できるコンセントの定格の、下限は、何 [A]。、、、答えは、20 [A]。解説、下限は1ランク下の20 [A]。
-
-問26。40 [A]分岐回路。接続できるコンセントの定格の、上限は、何 [A]。、、、答えは、40 [A]。解説、40 [A]分岐は30から40。
-
-問27。50 [A]分岐回路。接続できるコンセントの定格の、上限は、何 [A]。、、、答えは、50 [A]。解説、50 [A]分岐は40から50。
-
-問28。15 [A]分岐回路。接続できるコンセントの定格は、何 [A]以下。、、、答えは、15 [A]。解説、15 [A]分岐は15以下。
-
-問29。定格20 [A]の低圧ヒューズが、溶断してはならない電流は、何 [A]。、、、答えは、22 [A]。解説、ヒューズは、定格の1.1倍の電流にたえる。20×1.1で22 [A]。
-
-問30。定格15 [A]の低圧ヒューズが、溶断してはならない電流は、何 [A]。、、、答えは、16.5 [A]。解説、1.1倍にたえる。15×1.1で16.5 [A]。
-
-問31。定格30 [A]の配線用遮断器が、自動的に動作してはならない電流は、何 [A]。、、、答えは、30 [A]。解説、定格の1倍の電流では、動作しないこと。
-
-問32。定格40 [A]の配線用遮断器が、60 [min]以内に動作しなければならない電流は、何 [A]。、、、答えは、50 [A]。解説、定格の1.25倍。40×1.25で50 [A]。
-
-問33。定格30 [A]の配線用遮断器が、2 [min]以内に動作しなければならない電流は、何 [A]。、、、答えは、60 [A]。解説、定格の2倍。30×2で60 [A]。
-
-問34。定格60 [A]の低圧ヒューズが、60 [min]以内に溶断しなければならない電流は、何 [A]。、、、答えは、96 [A]。解説、定格の1.6倍。60×1.6で96 [A]。
-
-問35。電動機の過負荷保護装置を省略できるのは、電源側の過電流遮断器の定格が、何 [A]以下のとき。、、、答えは、15 [A]。解説、過電流遮断器15 [A]以下で省略できる。
-
-問36。同じく、過電流遮断器が配線用遮断器の場合は、定格何 [A]以下のとき省略できる。、、、答えは、20 [A]。解説、配線用遮断器なら20 [A]以下。
-
-問37。小勢力回路。最大使用電圧15 [V]以下のとき、過電流遮断器の定格は、何 [A]。、、、答えは、5 [A]。解説、15 [V]以下は5 [A]。
-
-問38。小勢力回路。最大使用電圧15 [V]を超え、30 [V]以下のとき、過電流遮断器の定格は、何 [A]。、、、答えは、3 [A]。解説、30 [V]以下は3 [A]。
-
-問39。小勢力回路。最大使用電圧30 [V]を超え、60 [V]以下のとき、過電流遮断器の定格は、何 [A]。、、、答えは、1.5 [A]。解説、電圧が上がるほど定格は小さくなる。
-
-問40。小勢力回路に電気を供給する、絶縁変圧器の、2次短絡電流は、何 [A]以下。、、、答えは、8 [A]。解説、2次短絡電流は8 [A]以下。
-
-
-
-
-
-以上、40問。おつかれさまでした。`},
-  {subj:"法規", name:"電圧", text:`電験三種 法規 電圧の数値 48問 読み上げ原稿
-
-【使い方】
-プレーヤーの「テキストファイルを選ぶ」または「貼り付けて読み込む」で読み込んでください。
-「問○。~答えは、○○。」の行だけが問題として読み込まれます。
-構成:電圧区分 → 電圧の維持 → 対地電圧・接地 → 絶縁抵抗 → 絶縁耐力試験(計算) → 電気事業法 → 特殊機器・特殊場所。
-問24~37の絶縁耐力は計算なので、考える間は7秒がおすすめです。
-
-ここから本文。
-
-問1。電圧の区分。低圧は、交流で何 [V]以下。、、、答えは、600 [V]。解説、交流の低圧は600 [V]以下。
-
-問2。電圧の区分。低圧は、直流で何 [V]以下。、、、答えは、750 [V]。解説、直流は750 [V]以下。
-
-問3。電圧の区分。高圧は、交流、直流とも、何 [V]以下。、、、答えは、7000 [V]。解説、高圧の上限は交直とも7000 [V]。
-
-問4。特別高圧は、何 [V]を超えるもの。、、、答えは、7000 [V]。解説、7000 [V]超が特別高圧。
-
-問5。電気の供給。標準電圧100 [V]では、何 [V]を中心に、上下6 [V]の範囲に維持する。、、、答えは、101 [V]。解説、101±6 [V]に維持。
-
-問6。標準電圧100 [V]の、維持すべき電圧の許容幅は、上下、何 [V]。、、、答えは、6 [V]。解説、上下6 [V]のはば。
-
-問7。標準電圧200 [V]では、何 [V]を中心に維持する。、、、答えは、202 [V]。解説、202±20 [V]。
-
-問8。標準電圧200 [V]の、許容幅は、上下、何 [V]。、、、答えは、20 [V]。解説、上下20 [V]のはば。
-
-問9。住宅の屋内電路の、対地電圧は、原則、何 [V]以下。、、、答えは、150 [V]。解説、住宅は対地150 [V]以下が原則。
-
-問10。定格消費電力2 [kW]以上の機器を、専用の電路で施設するなどの条件を満たす場合、住宅屋内の対地電圧は、何 [V]以下まで認められる。、、、答えは、300 [V]。解説、2 [kW]以上、専用回路などで300まで。
-
-問11。住宅の屋内で、太陽電池モジュールに接続する直流電路は、対地電圧、何 [V]以下まで認められる。、、、答えは、450 [V]。解説、太陽電池の直流は450 [V]までの特例。
-
-問12。単相3線式、100、200 [V]配電の、対地電圧は、何 [V]。、、、答えは、100 [V]。解説、中性線を接地するので対地は100。
-
-問13。接地工事。C種接地工事は、使用電圧が、何 [V]を超える低圧に施す。、、、答えは、300 [V]。解説、300 [V]超の低圧はC種。
-
-問14。D種接地工事は、使用電圧、何 [V]以下の低圧に施す。、、、答えは、300 [V]。解説、300 [V]以下はD種。
-
-問15。低圧用機械器具を、乾燥した場所に施設する場合、接地工事を省略できるのは、対地電圧、何 [V]以下のとき。、、、答えは、150 [V]。解説、乾燥した場所、かつ対地150以下で省略できる。
-
-問16。金属製外箱を有する使用電圧60 [V]を超える低圧機器を、人が容易に触れるおそれがある場所に施設するとき、原則として施設する保護装置は何。、、、答えは、漏電遮断器。解説、乾燥した場所、二重絶縁構造など、規定された例外を除く。
-
-問17。B種接地工事の抵抗値、150/Igの、150の意味は、混触時の低圧電路の対地電圧を、何 [V]以下に抑えるため。、、、答えは、150 [V]。解説、混触時の電位上昇を150 [V]におさえる。
-
-問18。低圧電路の絶縁抵抗。0.1 [MΩ]でよいのは、使用電圧300 [V]以下で、対地電圧が、何 [V]以下の場合。、、、答えは、150 [V]。解説、対地150以下なら0.1 [MΩ]。
-
-問19。絶縁抵抗0.2 [MΩ]が必要なのは、対地電圧150 [V]を超え、使用電圧が、何 [V]以下の場合。、、、答えは、300 [V]。解説、150超、300以下は0.2 [MΩ]。
-
-問20。絶縁抵抗0.4 [MΩ]が必要なのは、使用電圧が、何 [V]を超える低圧の場合。、、、答えは、300 [V]。解説、300超は0.4 [MΩ]。
-
-問21。白熱電灯に電気を供給する屋内電路の、対地電圧は、原則、何 [V]以下。、、、答えは、150 [V]。解説、白熱電灯も対地150 [V]以下。
-
-問22。一般用電気工作物は、原則として何の電圧で受電するもの。、、、答えは、低圧。解説、一般用電気工作物は原則として低圧で受電し、小規模事業用電気工作物などを除く。
-
-問23。電気主任技術者の外部委託承認制度の対象となる需要設備は、受電電圧、何 [V]以下。、、、答えは、7000 [V]。解説、外部委託は7000 [V]以下受電。
-
-問24。絶縁耐力試験。公称電圧6600 [V]の電路の、最大使用電圧は、何 [V]。、、、答えは、6900 [V]。解説、6600×1.15 / 1.1。
-
-
-問25。公称電圧22000 [V]の電路の、最大使用電圧は、何 [V]。、、、答えは、23000 [V]。解説、最大使用電圧 = 公称電圧 × 1.15 / 1.1。22000 × 1.15 / 1.1 = 23000 [V]。
-
-
-問26。公称電圧6600 [V]の電路の、絶縁耐力試験の、交流試験電圧は、何 [V]。、、、答えは、10350 [V]。解説、最大使用電圧7000 [V]以下は、1.5倍。6900×1.5で10350 [V]。
-
-問27。公称電圧3300 [V]の電路の、絶縁耐力試験の、交流試験電圧は、何 [V]。、、、答えは、5175 [V]。解説、7000 [V]以下は1.5倍。3450×1.5で5175 [V]。
-
-問28。絶縁耐力試験で、試験電圧の計算値が小さい場合の、最低の試験電圧は、何 [V]。、、、答えは、500 [V]。解説、計算値が500 [V]未満なら、500 [V]で試験する。
-
-問29。公称電圧22000 [V]の電路の、絶縁耐力試験電圧は、何 [V]。、、、答えは、28750 [V]。解説、最大使用電圧7000 [V]超、60000 [V]以下は、1.25倍。23000×1.25で28750 [V]。
-
-問30。公称電圧66000 [V]の電路の、絶縁耐力試験電圧は、何 [V]。、、、答えは、86250 [V]。解説、1.25倍の区分。69000×1.25で86250 [V]。
-
-問31。絶縁耐力試験。最大使用電圧7000 [V]を超え、60000 [V]以下の区分の、最低の試験電圧は、何 [V]。、、、答えは、10500 [V]。解説、この区分の最低値は、10500 [V]。
-
-問32。公称電圧6600 [V]のケーブルを、直流で絶縁耐力試験する場合の、試験電圧は、何 [V]。、、、答えは、20700 [V]。解説、直流は、交流試験電圧の2倍。10350×2で20700 [V]。
-
-問33。公称電圧3300 [V]のケーブルの、直流の絶縁耐力試験電圧は、何 [V]。、、、答えは、10350 [V]。解説、直流は交流の2倍。5175×2で10350 [V]。
-
-問34。最大使用電圧200 [V]の回転機の、絶縁耐力試験電圧は、何 [V]。、、、答えは、500 [V]。解説、1.5倍では300 [V]。最低値の規定により500 [V]。
-
-問35。最大使用電圧11500 [V]の、中性点接地式電路の、絶縁耐力試験電圧は、何 [V]。、、、答えは、10580 [V]。解説、最大使用電圧15000 [V]以下の、中性点接地式電路は、0.92倍。11500×0.92で10580 [V]。
-
-問36。第三種電気主任技術者が、保安の監督をできるのは、電圧、何 [V]未満の事業用電気工作物。、、、答えは、5万 [V]。解説、三種は5万 [V]未満。
-
-問37。第二種電気主任技術者が、保安の監督をできるのは、電圧、何 [V]未満。、、、答えは、17万 [V]。解説、二種は17万 [V]未満。
-
-問38。需要設備の設置で、工事計画の事前届出が必要となるのは、受電電圧、何 [V]以上。、、、答えは、1万 [V]。解説、受電1万 [V]以上で工事計画届出。
-
-問39。市街地などに施設できる、特別高圧架空電線路は、使用電圧、何 [V]未満。、、、答えは、17万 [V]。解説、市街地の特別高圧は17万 [V]未満。
-
-問40。小勢力回路の、最大使用電圧は、何 [V]以下。、、、答えは、60 [V]。解説、小勢力回路は60 [V]以下。
-
-問41。小勢力回路で、過電流遮断器の定格が5 [A]となるのは、最大使用電圧、何 [V]以下の区分。、、、答えは、15 [V]。解説、15 [V]以下の区分は5 [A]。
-
-問42。小勢力回路で、過電流遮断器の定格が3 [A]となるのは、15 [V]を超え、何 [V]以下の区分。、、、答えは、30 [V]。解説、30 [V]以下の区分は3 [A]。
-
-問43。電気浴器の、電源変圧器の2次側電圧は、何 [V]以下。、、、答えは、10 [V]。解説、電気浴器は10 [V]以下。
-
-問44。遊戯用電車の、電源の電圧は、直流で、何 [V]以下。、、、答えは、60 [V]。解説、遊戯用電車は直流60 [V]。
-
-問45。遊戯用電車の、電源の電圧は、交流で、何 [V]以下。、、、答えは、40 [V]。解説、交流は40 [V]。
-
-問46。遊戯用電車の、電源変圧器の1次側電圧は、何 [V]以下。、、、答えは、300 [V]。解説、1次側は300 [V]以下。
-
-問47。プール用水中照明灯の、絶縁変圧器の2次側電圧は、何 [V]以下。、、、答えは、150 [V]。解説、水中照明の2次側は150 [V]以下。
-
-問48。プール用水中照明灯で、地絡遮断装置が必要となるのは、2次側電圧が、何 [V]を超える場合。、、、答えは、30 [V]。解説、30 [V]超で地絡遮断装置。
-
-以上、48問。おつかれさまでした。`},
-  {subj:"法規", name:"期間", text:`電験三種 法規 期間の数値 37問 読み上げ原稿
-
-【使い方】
-プレーヤーの「テキストファイルを選ぶ」または「貼り付けて読み込む」で読み込んでください。
-「問○。~答えは、○○。」の行だけが問題として読み込まれます。
-構成:絶縁耐力の10分 → B種接地の遮断秒数 → 漏電遮断器 → 事故報告 → 過電流遮断器の動作時間 → 事業法・工事士法などの年数 → 負荷率計算の基礎 → 水力・揚水の継続時間計算。
-問41以降は計算なので、考える間を長めにするのがおすすめです。
-
-ここから本文。
-
-問1。電路の絶縁耐力試験。試験電圧を、連続して、何 [min]加える。、、、答えは、10 [min]。解説、絶縁耐力は一律、連続10 [min]。
-
-問2。変圧器の絶縁耐力試験。試験電圧を加える時間は、連続、何 [min]。、、、答えは、10 [min]。解説、変圧器も10 [min]。
-
-
-
-
-問3。B種接地工事。600/Igが使えるのは、混触時に、何 [s]以内に、自動的に電路を遮断する場合。、、、答えは、1 [s]。解説、1 [s]以内なら600/Ig。
-
-問4。300/Igが使えるのは、1 [s]を超え、何 [s]以内に遮断する場合。、、、答えは、2 [s]。解説、2 [s]以内なら300/Ig。
-
-問5。原則の150/Igが適用されるのは、遮断時間が、何 [s]を超える場合。、、、答えは、2 [s]。解説、2 [s]を超えると原則の150/Ig。
-
-問6。低圧用機械器具を、水気のある場所以外に施設し、外箱の接地工事を省略する条件。定格感度電流15 [mA]以下の漏電遮断器で、動作時間は、何 [s]以下。、、、答えは、0.1 [s]。解説、15 [mA]、0.1 [s]とセット。水気のある場所では省略できない。
-
-
-問7。電気さく用電源装置の電路に施設する漏電遮断器の、動作時間は、何 [s]以下。、、、答えは、0.1 [s]。解説、電気さくも0.1 [s]。
-
-問8。電気事故報告。速報は、事故の発生を知った時から、何 [h]以内。、、、答えは、24 [h]。解説、速報は知った時から24 [h]。
-
-問9。電気事故報告。詳報は、事故の発生を知った日から起算して、何日以内。、、、答えは、30日。解説、詳報は知った日から30日。
-
-問10。定格30 [A]以下の配線用遮断器。定格の1.25倍の電流で、何 [min]以内に動作する。、、、答えは、60 [min]。解説、1.25倍は60 [min]以内。
-
-問11。定格30 [A]以下の配線用遮断器。定格の2倍の電流で、何 [min]以内に動作する。、、、答えは、2 [min]。解説、2倍は2 [min]以内。30 [A]以下。
-
-問12。定格40 [A]、つまり30を超え50 [A]以下の配線用遮断器。1.25倍の電流で、何 [min]以内。、、、答えは、60 [min]。解説、1.25倍の60 [min]は50 [A]以下も同じ。
-
-問13。30を超え50 [A]以下の配線用遮断器。2倍の電流で、何 [min]以内。、、、答えは、4 [min]。解説、30超50以下の2倍は4 [min]。
-
-問14。50を超え100 [A]以下の配線用遮断器。1.25倍の電流で、何 [min]以内。、、、答えは、120 [min]。解説、50超100は1.25倍で120 [min]。
-
-問15。50を超え100 [A]以下の配線用遮断器。2倍の電流で、何 [min]以内。、、、答えは、6 [min]。解説、同じ区分の2倍は6 [min]。
-
-問16。定格30 [A]以下の低圧ヒューズ。定格の1.6倍の電流で、何 [min]以内に溶断する。、、、答えは、60 [min]。解説、ヒューズは1.6倍で60 [min]。
-
-問17。定格30 [A]以下の低圧ヒューズ。定格の2倍の電流で、何 [min]以内に溶断する。、、、答えは、2 [min]。解説、2倍で2 [min]。30 [A]以下。
-
-問18。30を超え60 [A]以下の低圧ヒューズ。1.6倍の電流で、何 [min]以内。、、、答えは、60 [min]。解説、30超60も1.6倍で60 [min]。
-
-問19。30を超え60 [A]以下の低圧ヒューズ。2倍の電流で、何 [min]以内。、、、答えは、4 [min]。解説、2倍は4 [min]。
-
-問20。高圧電路の、包装ヒューズ。定格の2倍の電流で、何 [min]以内に溶断する。、、、答えは、120 [min]。解説、包装ヒューズは2倍で120 [min]。
-
-問21。高圧電路の、非包装ヒューズ。定格の2倍の電流で、何 [min]以内に溶断する。、、、答えは、2 [min]。解説、非包装は2倍で2 [min]。
-
-問22。一般用電気工作物に対して、電線路維持運用者が行う定期調査は、原則として何年に1回以上行う。、、、答えは、4年。解説、電線路維持運用者が一般用電気工作物に対して行う定期調査は、原則4年に1回以上。
-
-問23。一般用電気工作物に対して、電線路維持運用者が行う定期調査で、登録点検業務受託法人が点検業務を受託している場合は、何年に1回以上行う。、、、答えは、5年。解説、登録点検業務受託法人が点検業務を受託している場合は、5年に1回以上。
-
-問24。電気事業者が届け出る供給計画は、何年間についての計画。、、、答えは、10年。解説、供給計画は10年間の計画。
-
-問25。供給計画は、何年ごとに届け出る。、、、答えは、1年。解説、毎年度、届け出る。
-
-問26。電気主任技術者免状の返納を命ぜられた者に、免状が交付されないことがあるのは、その日から、何年間。、、、答えは、1年。解説、返納から1年は交付されないことがある。
-
-問27。電気工事士免状の返納を命ぜられた場合も、交付されないことがあるのは、何年間。、、、答えは、1年。解説、電気工事士も同じく1年。
-
-問28。第一種電気工事士は、免状交付から、何年以内ごとに、定期講習を受ける。、、、答えは、5年。解説、第一種は5年ごとに定期講習。
-
-問29。主任電気工事士になれるのは、第二種電気工事士の場合、免状交付後、何年以上の実務経験が必要。、、、答えは、3年。解説、第二種プラス実務3年。
-
-問30。電気工事業の登録の、有効期間は、何年。、、、答えは、5年。解説、登録の有効期間は5年。
-
-問31。電気工事業者の帳簿の、保存期間は、記載の日から、何年間。、、、答えは、5年。解説、帳簿も5年保存。
-
-問32。使用前自主検査の記録の、保存期間は、何年間。、、、答えは、5年。解説、自主検査の記録も5年。
-
-問33。電気用品の届出事業者が行う検査の、記録の保存期間は、何年間。、、、答えは、3年。解説、電気用品の検査記録は3年。
-
-問34。日負荷率の計算。平均電力は、1日の使用電力量を、何 [h]で割る。、、、答えは、24 [h]。解説、平均電力 = 1日の使用電力量 / 24 [h]。
-
-問35。年負荷率の計算。1年間は、何 [h]として計算する。、、、答えは、8760 [h]。解説、365×24で8760。
-
-問36。月負荷率の計算。30日間は、何 [h]として計算する。、、、答えは、720 [h]。解説、30×24で720。
-
-
-
-
-
-
-
-
-
-
-
-問37。特定需要家、例えば小中学校や病院等の一般用電気工作物の定期調査は、何年に1回以上行う。、、、答えは、1年。解説、一般の需要場所は原則4年に1回以上だが、特定需要家は1年に1回以上。
-
-
-以上、37問。おつかれさまでした。`},
-  {subj:"法規", name:"用語", text:`電験三種 法規 用語 59問 読み上げ原稿
-
-【使い方】
-プレーヤーの「テキストファイルを選ぶ」または「貼り付けて読み込む」で読み込んでください。
-「問○。~答えは、○○。」の行だけが問題として読み込まれます。
-構成:電気事業法の定義・手続き → 電技・解釈の定義用語 → 接地工事の種別 → 保護装置・機器 → 工事の種類 → 資格 → 電気用品 → 発電所 → 系統連系 → 架空・地中電線路。
-
-ここから本文。
-
-問1。低圧で受電し、その受電場所と同一構内で使用される電気工作物で、小規模事業用電気工作物などを除くものを、原則として何という。、、、答えは、一般用電気工作物。解説、一般住宅や小規模店舗などの低圧受電設備が代表例。
-
-問2。事業用電気工作物のうち、電気事業の用に供するもの以外の電気工作物を、何という。、、、答えは、自家用電気工作物。解説、事業用から、電気事業用を除いたもの。
-
-問3。事業用電気工作物の保安を確保するため、設置者が定めて、使用開始前に届け出る規程を、何という。、、、答えは、保安規程。解説、定めて、使用開始前に届け出る。
-
-問4。事業用電気工作物の、工事、維持、運用に関する保安の監督をさせるため、設置者が選任する者を、何という。、、、答えは、電気主任技術者。解説、保安の監督者として選任する。
-
-問5。一般送配電事業を営むために、経済産業大臣から受ける必要があるのは、何。、、、答えは、許可。解説、送配電は独占性が高く、最もきびしい許可制。
-
-問6。小売電気事業を営むために必要な手続きは、何。、、、答えは、登録。解説、小売は登録制。
-
-問7。発電事業を営むために必要な手続きは、何。、、、答えは、届出。解説、発電は届出制。許可、登録、届出の順にゆるい。
-
-問8。保安規程は、使用開始前に、経済産業大臣に対して何をする。、、、答えは、届出。解説、認可ではなく届出。
-
-問9。受電電圧1万 [V]以上の需要設備を設置するとき、工事開始前に必要な手続きは、何。、、、答えは、工事計画の事前届出。解説、工事開始の30日前までに届出。
-
-問10。一般用電気工作物が技術基準に適合しているかを調査する義務を負う者を、法律上、何という。、、、答えは、電線路維持運用者。解説、一般用電気工作物と直接接続する電線路を維持し、運用する者で、登録調査機関に調査業務を委託できる。
-
-問11。1つの需要場所の引込線から分岐して、支持物を経ないで、他の需要場所の引込口に至る電線を、何という。、、、答えは、連接引込線。解説、引込線から、さらに分岐する電線。
-
-問12。架空電線路の支持物から、需要場所の取付け点に至る架空電線を、何という。、、、答えは、架空引込線。解説、支持物から取付け点までの電線。
-
-問13。無効電力を調整する電気機械器具を、何という。、、、答えは、調相設備。解説、無効電力の調整、イコール調相。
-
-問14。造営物のうち、人が居住し、勤務し、または頻繁に出入りし、もしくは来集するものを、何という。、、、答えは、建造物。解説、造営物のうち、人が出入りするもの。
-
-問15。土地に定着する工作物のうち、屋根および柱、または壁を有するものを、何という。、、、答えは、造営物。解説、屋根と、柱または壁を持つ工作物。
-
-問16。架空電線が、他の工作物の上方、または側方において、水平距離3 [m]未満に施設される状態を、何という。、、、答えは、第二次接近状態。解説、水平距離3 [m]未満が第二次接近状態。第一次接近状態は、支持物の地表上の高さに相当する距離内に接近する状態。支持物の倒壊時に接触するおそれを考慮する。
-
-問17。設備に人が接近、接触しないように講じる措置で、屋内では床上2.3 [m]以上、屋外では地表上2.5 [m]以上に施設することなどを、何という。、、、答えは、接触防護措置。解説、屋内2.3、屋外2.5 [m]。
-
-問18。屋内では床上1.8 [m]以上、屋外では地表上2 [m]以上に施設することなどを、何という。、、、答えは、簡易接触防護措置。解説、簡易は、屋内1.8、屋外2 [m]。
-
-問19。炎を当てても、燃え広がらない性質を、何という。、、、答えは、難燃性。解説、ほのおを当てても燃え広がらない性質。
-
-問20。通常の使用状態において、電路に加わる最大の電圧を、何という。、、、答えは、最大使用電圧。解説、公称電圧 × 1.15 / 1.1で計算する。
-
-問21。高圧用の機械器具の、金属製外箱に施す接地工事は、何。、、、答えは、A種接地工事。解説、高圧機器の外箱はA種、10 [Ω]。
-
-問22。高圧と低圧を結合する変圧器の、低圧側の中性点に施す接地工事は、何。、、、答えは、B種接地工事。解説、混触対策で、変圧器の低圧側に施す。
-
-問23。300 [V]を超える低圧用の機械器具の、金属製外箱に施す接地工事は、何。、、、答えは、C種接地工事。解説、300 [V]超の低圧はC種、10 [Ω]。
-
-問24。300 [V]以下の低圧用の機械器具の、金属製外箱に施す接地工事は、何。、、、答えは、D種接地工事。解説、300 [V]以下はD種、100 [Ω]。
-
-問25。電路に地絡を生じたとき、自動的に電路を遮断する装置を、何という。、、、答えは、漏電遮断器。解説、地絡、イコール漏電を検出して遮断。
-
-問26。過負荷や短絡による過電流を、自動的に遮断する装置を、何という。、、、答えは、過電流遮断器。解説、過負荷と短絡を遮断する。
-
-問27。雷などによる異常電圧を大地に放電させて、電気設備を保護する機器を、何という。、、、答えは、避雷器。解説、異常電圧を大地に放電させる。
-
-問28。高圧電路の地絡電流を検出するために用いる変流器を、何という。、、、答えは、零相変流器。解説、地絡時に生じる零相分の電流を検出。
-
-問29。短絡電流のような大電流を、遮断できる開閉機器を、何という。、、、答えは、遮断器。解説、短絡電流を切れるのは遮断器だけ。
-
-問30。電流が流れていない状態でのみ、回路を開閉する機器を、何という。、、、答えは、断路器。解説、負荷電流は切れない。無負荷専用。
-
-問31。低圧屋内配線で、展開した場所、または点検できる隠ぺい場所に限り、施設できる工事は、何。、、、答えは、がいし引き工事。解説、露出配線なので、施設場所がかぎられる。
-
-問32。可燃性ガスが存在する場所の低圧屋内配線で、施設できる工事は、金属管工事と、何。、、、答えは、ケーブル工事。解説、危険場所は、金属管かケーブル。
-
-問33。合成樹脂管工事で、直接コンクリートに埋め込む場合などを除き、使用できない管は、何。、、、答えは、CD管。解説、CD管はコンクリート埋め込み専用。
-
-問34。最大電力500 [kW]未満の、自家用電気工作物の電気工事に必要な資格は、何。、、、答えは、第一種電気工事士。解説、自家用500 [kW]未満は第一種。
-
-問35。一般用電気工作物の電気工事ができる資格は、第一種電気工事士と、何。、、、答えは、第二種電気工事士。解説、一般用は第一種でも第二種でもよい。
-
-問36。自家用電気工作物の、低圧部分の簡易電気工事ができる資格は、何。、、、答えは、認定電気工事従事者。解説、自家用の低圧部分だけ工事できる。
-
-問37。ネオン工事や、非常用予備発電装置工事などの、特殊電気工事に必要な資格は、何。、、、答えは、特種電気工事資格者。解説、ネオンと、非常用予備発電の専門資格。
-
-問38。電気用品のうち、構造や使用方法から、特に危険、または障害の発生するおそれが多いものを、何という。、、、答えは、特定電気用品。解説、危険や障害のおそれが多いもの。
-
-問39。特定電気用品に表示する、PSEマークの記号の形は、何。、、、答えは、ひし形。解説、特定はひし形のPSE。
-
-問40。特定電気用品以外の電気用品に表示する、記号の形は、何。、、、答えは、丸形。解説、特定以外は丸形のPSE。
-
-問41。水力発電所の、ダムや水路の保安の監督のために選任する主任技術者は、何。、、、答えは、ダム水路主任技術者。解説、水力の、ダムと水路部分を監督。
-
-問42。火力発電所の、ボイラーやタービンの保安の監督のために選任する主任技術者は、何。、、、答えは、ボイラー・タービン主任技術者。解説、火力の、ボイラーとタービンを監督。
-
-問43。常時監視をしない発電所で、技術員が、適当な間隔をおいて発電所を巡回する監視方式を、何という。、、、答えは、随時巡回方式。解説、適当な間隔で巡回する方式。
-
-問44。制御所に技術員が常時駐在し、遠隔で発電所を監視、制御する方式を、何という。、、、答えは、遠隔常時監視制御方式。解説、制御所に常駐して遠隔監視。
-
-問45。分散型電源が、電力系統から切り離された状態で、発電を継続し、線路に電気を供給している状態を、何という。、、、答えは、単独運転。解説、切り離されたまま供給を続ける危険な状態。
-
-問46。需要家の構内から、電力系統側へ、電力が流れることを、何という。、、、答えは、逆潮流。解説、需要家から系統へ、電力が逆に流れる。
-
-問47。分散型電源を、電力系統から切り離すことを、何という。、、、答えは、解列。解説、系統から切り離すこと。
-
-問48。低圧架空電線と、高圧架空電線を、同一の支持物に施設することを、何という。、、、答えは、併架。解説、電力線どうしは併架。
-
-問49。架空電線と、架空弱電流電線を、同一の支持物に施設することを、何という。、、、答えは、共架。解説、弱電流電線とは共架。
-
-問50。地中電線路の施設方式は、直接埋設式、管路式と、もう一つは、何。、、、答えは、暗きょ式。解説、直接埋設、管路、暗きょの3方式。
-
-問51。太陽電池発電設備で10 [kW]以上50 [kW]未満のもの、および、風力発電設備で20 [kW]未満のものは、事業用電気工作物のうち、何に区分される。、、、答えは、小規模事業用電気工作物。解説、太陽電池10から50 [kW]、風力20 [kW]未満。
-
-問52。小規模事業用電気工作物の対象となる発電設備は、太陽電池発電設備と、もう一つは何。、、、答えは、風力発電設備。解説、原則として太陽電池は10 [kW]以上50 [kW]未満、風力は20 [kW]未満が対象となる。
-問53。事業用電気工作物を管理する電子計算機について、不正アクセスなどによる危険を防止するために確保するものは何。、、、答えは、サイバーセキュリティ。解説、電気設備技術基準では、運転を管理する電子計算機のサイバーセキュリティ確保を求めている。
-
-問54。高圧架空引込線について、高さの緩和規定を適用できない場所は、どこ。、、、答えは、道路横断、鉄道・軌道横断、横断歩道橋上。解説、これらの場所では高さの緩和規定を適用できない。その他の場所では、絶縁電線、ケーブルとも地表上3.5 [m]以上まで緩和できる。ただし、ケーブル以外では電線の下方に危険表示が必要。
-
-問55。発電設備が連系している電力系統が、系統電源から切り離された状態で、発電設備がその系統の線路負荷へ有効電力を供給する運転を、何という。、、、答えは、単独運転。解説、発電設備は電力系統から解列されず、切り離された系統区間に接続したまま運転している。
-
-問56。発電設備を電力系統から解列し、構内負荷だけに電力を供給する運転を、何という。、、、答えは、自立運転。解説、発電設備は電力系統から切り離されており、電力会社の配電線には電力を供給しない。
-
-問57。保護協調の目的は、何。、、、答えは、事故回路を確実に遮断し、健全回路への給電をできるだけ継続する。解説、事故点に近い保護装置を優先して動作させ、停電範囲を最小限にする。
-
-問58。需要家構内で短絡事故が発生した場合。送り出し遮断器AとSOG機能付きPAS Bは、どの順番で動作する。、、、答えは、Aが開路した後、Bが開路し、その後Aが再閉路する。解説、Aが短絡電流を遮断し、無電流になってからBが事故需要家を切り離す。
-
-問59。順送式故障区間分離方式では、自動区分開閉器を、どちら側から順番に投入する。、、、答えは、電源側から負荷側。解説、一定の時間差を設けて各区間へ順番に再送電する。
-
-以上、59問。おつかれさまでした。`},
-  {subj:"法規", name:"公式", text:`電験三種 法規 公式 74問 読み上げ原稿
-
-【使い方】
-プレーヤーの「テキストファイルを選ぶ」または「貼り付けて読み込む」で読み込んでください。
-「問○。~答えは、○○。」の行だけが問題として読み込まれます。
-公式は通常の数式記号で表示し、読み上げ時だけ変換表を適用します。
-構成:B種接地 → 地絡回路 → 絶縁耐力 → 条文の式 → 幹線設計 → 需要率・負荷率・不等率 → 電力と力率 → パーセントインピーダンス → 電圧降下 → 水力・揚水 → 1線地絡電流 → 風圧荷重 → 30分最大需要電力 → 漏えい電流 → ケーブル充電電流 → 支線 → 共同地線。
-
-ここから本文。
-
-問1。B種接地工事の接地抵抗値。原則の計算式は、何。、、、答えは、150/Ig。解説、混触時の電位上昇を150 [V]におさえるため。
-
-問2。混触時に、1 [s]を超え2 [s]以内に、自動的に遮断する装置がある場合の、B種接地抵抗の式は、何。、、、答えは、300/Ig。解説、2 [s]以内の遮断で2倍に緩和。
-
-問3。1 [s]以内に遮断する装置がある場合の、B種接地抵抗の式は、何。、、、答えは、600/Ig。解説、1 [s]以内なら4倍に緩和。
-
-問4。変圧器の低圧側1線から、D種接地された金属製外箱へ完全地絡し、他のインピーダンスを無視する。地絡電流 Ig の式は何。、、、答えは、Ig = E / (RB + RD)。解説、Eは低圧側の対地電圧、RBはB種接地抵抗、RDはD種接地抵抗。
-問5。問4の地絡回路で、金属製外箱に現れる対地電圧 VD の式は何。、、、答えは、VD = Ig × RD = E × RD / (RB + RD)。解説、外箱の対地電圧は、D種接地抵抗に生じる電圧降下。
-問6。絶縁耐力試験。最大使用電圧の計算式は、何。、、、答えは、公称電圧 [V]×1.15/1.1。解説、6600なら6900 [V]になる。
-問7。絶縁耐力試験。最大使用電圧7000 [V]以下の電路の、交流試験電圧の式は、何。、、、答えは、最大使用電圧 [V]×1.5。解説、7000 [V]以下は1.5倍。
-問8。絶縁耐力試験。最大使用電圧7000 [V]を超え、60000 [V]以下の電路の、試験電圧の式は、何。、、、答えは、最大使用電圧 [V]×1.25。解説、6万 [V]以下は1.25倍。
-問9。絶縁耐力試験。最大使用電圧15000 [V]以下の、中性点接地式電路の、試験電圧の式は、何。、、、答えは、最大使用電圧 [V]×0.92。解説、中性点接地式は0.92倍。
-問10。ケーブルを直流で絶縁耐力試験する場合の、試験電圧の式は、何。、、、答えは、交流試験電圧 [V]×2。解説、直流は交流の2倍。
-問11。低圧電線路の、漏えい電流の上限の式は、何。、、、答えは、最大供給電流 [A]/2000。解説、2000分の1以下にたもつ。
-問12。使用電圧160 [kV]超の発電所の、さくの高さと充電部までの距離の和の式は、何。、、、答えは、6 [m]+0.12 [m]×超過10 [kV]ごと。解説、超過10 [kV]ごと、端数切り上げ。
-
-問13。使用電圧160 [kV]超の、特別高圧架空電線の高さの式は、何。、、、答えは、6 [m]+0.12 [m]×超過10 [kV]ごと。解説、さく、へいと同じ加算ルール。
-
-問14。幹線の許容電流。電動機の定格電流の合計IMが、50 [A]以下の場合の式は、何。、、、答えは、1.25×IM [A]+他の負荷の合計 [A]。解説、電動機の合計が、他の負荷より大きい場合に適用。始動電流を見込んで1.25倍。
-問15。電動機の合計IMが、50 [A]を超える場合の、幹線の許容電流の式は、何。、、、答えは、1.1×IM [A]+他の負荷の合計 [A]。解説、同じく、電動機が他の負荷より大きい場合。50 [A]超は1.1倍に緩和。
-問16。電動機がある幹線の、過電流遮断器の定格電流の上限。1つ目の式は、何。、、、答えは、3×IM [A]+他の負荷の合計 [A]。解説、始動電流で切れない上限。
-問17。同じく、過電流遮断器の定格電流の上限。2つ目の式は、何。、、、答えは、幹線の許容電流 [A]×2.5。解説、幹線を守れる上限が2.5倍。
-問18。需要率の式は、何。、、、答えは、最大需要電力 [kW]/設備容量 [kW]×100。解説、設備がどれだけ使われているかの割合。
-問19。負荷率の式は、何。、、、答えは、平均需要電力 [kW]/最大需要電力 [kW]×100。解説、負荷の平準度をあらわす。
-問20。不等率の式は、何。、、、答えは、各需要家の最大需要電力の和 [kW]/合成最大需要電力 [kW]。解説、必ず1以上になる。
-問21。設備容量と需要率から、最大需要電力を求める式は、何。、、、答えは、設備容量 [kW]×需要率。解説、需要率の式の変形。
-問22。最大需要電力と負荷率から、平均需要電力を求める式は、何。、、、答えは、最大需要電力 [kW]×負荷率。解説、負荷率の式の変形。
-問23。各需要家の最大需要電力の和と、不等率から、合成最大需要電力を求める式は、何。、、、答えは、最大需要電力の和 [kW]/不等率。解説、不等率の式の変形。
-問24。使用電力量から、平均電力を求める式は、何。、、、答えは、使用電力量 [kWh]/時間 [h]。解説、平均の定義そのもの。
-問25。電力から、電力量を求める式は、何。、、、答えは、電力 [kW]×時間 [h]。解説、[kW]×時間で、[kWh]。
-問26。設備容量、需要率、負荷率から、平均電力を一気に求める式は、何。、、、答えは、設備容量 [kW]×需要率×負荷率。解説、設備容量に需要率と負荷率を乗じる。
-問27。単相交流の有効電力の式は、何。、、、答えは、電圧 [V]×電流 [A]×cosθ。解説、単相の基本形。
-問28。三相交流の有効電力の式は、何。、、、答えは、√3×線間電圧 [V]×線電流 [A]×cosθ。解説、三相は√3倍。
-問29。三相の皮相電力の式は、何。、、、答えは、√3×線間電圧 [V]×線電流 [A]。解説、cosθを除いたもの。
-問30。力率の式は、何。、、、答えは、有効電力 [kW]/皮相電力 [kVA]。解説、力率の定義。
-問31。皮相電力と有効電力から、無効電力を求める式は、何。、、、答えは、√(皮相電力 [kVA]²−有効電力 [kW]²)。解説、電力の直角三角形から。
-問32。三相負荷の線電流を、電力から求める式は、何。、、、答えは、有効電力 [kW]/(√3×線間電圧 [kV]×cosθ)。解説、三相電力の式を電流について解く。
-問33。力率改善に必要な、コンデンサ容量の式は、何。、、、答えは、有効電力 [kW]×(tanθ1−tanθ2)。解説、無効電力の差の分だけ補償する。
-問34。力率を100 [%]まで改善する場合の、コンデンサ容量は、何と等しい。、、、答えは、改善前の無効電力。解説、tanθ2がゼロになるため。
-
-問35。最大需要電力と力率から、必要な変圧器容量を求める式は、何。、、、答えは、最大需要電力 [kW]/力率。解説、[kW]を [kVA]に直す。
-問36。単相変圧器2台による、V結線の出力の式は、何。、、、答えは、√3×変圧器1台の容量 [kVA]。解説、2台でも2倍にはならない。
-問37。[%]インピーダンス法で、短絡電流を求める式は、何。、、、答えは、定格電流 [A]×100/%Z。解説、[%]インピーダンスが小さいほど大きい。
-問38。短絡容量を求める式は、何。、、、答えは、基準容量 [MVA]×100/%Z。解説、短絡容量も同じ形。
-問39。[%]インピーダンスの、基準容量への換算式は、何。、、、答えは、変換後%Z=変換前%Z×変換後基準容量/変換前基準容量。解説、%Zは基準容量に比例する。
-問40。遮断器の遮断容量の式は、何。、、、答えは、√3×定格電圧 [V]×定格遮断電流 [A]。解説、三相の皮相電力と同じ形。
-問41。単相2線式の電圧降下の式は、何。、、、答えは、2×I [A]×(R [Ω]cosθ+X [Ω]sinθ)。解説、往復2本分で2倍。
-問42。三相3線式の電圧降下の式は、何。、、、答えは、√3×I [A]×(R [Ω]cosθ+X [Ω]sinθ)。解説、三相は√3倍。
-問43。水力発電所の出力 P の式は何。、、、答えは、P = 9.8QHη [kW]。解説、Qの単位は [m³/s]、Hの単位は [m]、ηは水車と発電機を合わせた効率。
-問44。揚水ポンプの入力電力 Pin [kW]の式は何。、、、答えは、Pin = 9.8QH / η [kW]。解説、Qの単位は [m³/s]、Hの単位は [m]、ηはポンプと電動機を合わせた効率。
-問45。貯水池式発電所の、発電継続時間の式は、何。、、、答えは、有効貯水量 [m³]/使用水量 [m³/s]。解説、秒で出るので時間に直す。
-問46。調整池式発電所の、ピーク発電の継続時間の式は、何。、、、答えは、有効容量 [m³]/(使用水量 [m³/s]−自然流量 [m³/s])。解説、不足分を調整池がおぎなう。
-問47。揚水に要する時間の式は、何。、、、答えは、揚水量 [m³]/ポンプの使用水量 [m³/s]。解説、時間は、量/流量。
-問48。発電所の設備利用率の式は、何。、、、答えは、期間の発電電力量 [kWh]/(定格出力 [kW]×期間の時間 [h])×100。解説、フル稼働とくらべた割合。
-問49。年負荷率の式は、何。、、、答えは、年間の平均電力 [kW]/年間の最大電力 [kW]×100。解説、期間が1年になるだけ。
-問50。日負荷率の計算で、平均電力を求める式は、何。、、、答えは、1日の使用電力量 [kWh]/24 [h]。解説、1日は24 [h]。
-
-問51。供給予備率の式は何。、、、答えは、供給予備率 = (供給力 − 最大需要電力) / 最大需要電力 × 100。解説、最大需要電力に対して、どれだけ余分な供給力があるかを示す。
-
-問52。公称電圧6.6 [kV]の中性点非接地式高圧電路がある。ケーブル以外の電線延長Lは250 [km]、ケーブルの線路延長L'は2 [km]である。電技解釈17の2表により求める1線地絡電流I1は何 [A]。、、、答えは、6 [A]。解説、V' = 6.6 / 1.1 = 6 [kV]。I1 = 1 + {V' / 3 × L − 100} / 150 + {V' / 3 × L' − 1} / 2。1 + (2 × 250 − 100) / 150 + (2 × 2 − 1) / 2 = 5.17 [A]。小数点以下を切り上げて6 [A]。
-
-問53。公称電圧6.6 [kV]の中性点非接地式高圧電路がある。ケーブル以外の電線延長Lは50 [km]、ケーブルの線路延長L'は0.5 [km]である。B種接地工事の計算に使用する1線地絡電流I1は何 [A]。、、、答えは、2 [A]。解説、V' = 6 [kV]。I1 = 1 + {2 × 50 − 100} / 150 + {2 × 0.5 − 1} / 2 = 1 [A]。第2項と第3項は負なら0とし、計算結果が2 [A]未満の場合は2 [A]とするため、2 [A]。
-
-問54。仕上り外径20 [mm]の電線1条について、長さ1 [m]当たりの甲種風圧荷重を求める。電線に加わる圧力を980 [Pa]とすると、風圧荷重は何 [N]。、、、答えは、19.6 [N]。解説、風圧荷重 = 圧力 × 垂直投影面積。980 × 0.020 × 1 = 19.6 [N]。
-
-問55。仕上り外径16 [mm]の電線について、厚さ6 [mm]の氷雪が周囲に付着したときの乙種風圧荷重を求める。甲種風圧荷重の圧力を980 [Pa]とすると、電線1条、長さ1 [m]当たりの乙種風圧荷重は何 [N]。、、、答えは、13.72 [N]。解説、氷雪付着後の外径は、16 + 6 × 2 = 28 [mm]。乙種の圧力は980 × 0.5 = 490 [Pa]。490 × 0.028 × 1 = 13.72 [N]。
-
-問56。ある工場の使用電力は、9時00分から9時20分まで310 [kW]である。9時20分から9時30分まで、10 [kW]の負荷と、1 [台]当たり5.5 [kW]のファンを停止する。9時00分からの30分最大需要電力を300 [kW]未満にするため、ファンを最低何 [台]停止する必要がある。、、、答えは、4 [台]。解説、30分最大需要電力 = 30分間の使用電力量 / 0.5 [h]。平均電力は、{310 × 20 + (310 − 10 − 5.5n) × 10} / 30。n = 3 [台]では301.17 [kW]、n = 4 [台]では299.33 [kW]となるため、最低4 [台]。
-
-問57。定格容量42 [kVA]、二次電圧105 [V]の単相変圧器に、単相2線式の低圧電線路が接続されている。電線1条当たりの漏えい電流の上限は何 [A]。、、、答えは、0.2 [A]。解説、最大供給電流は、42000 / 105 = 400 [A]。漏えい電流の上限は電線1条当たり、最大供給電流 / 2000。400 / 2000 = 0.2 [A]。
-
-問58。交流絶縁耐力試験で、試験電圧10.35 [kV]を、対地静電容量0.20 [μF]のケーブルに加える。周波数は50 [Hz]である。ケーブルの充電電流Icは約何 [A]。、、、答えは、0.65 [A]。解説、Ic = 2πfCV。2 × π × 50 × 0.20 × 10⁻⁶ × 10350 ≒ 0.65 [A]。
-
-問59。試験電圧10.35 [kV]、ケーブル充電電流0.65 [A]の交流絶縁耐力試験を行う。ケーブルへ供給される皮相電力は約何 [kVA]。、、、答えは、6.73 [kVA]。解説、S = VI。10.35 × 0.65 ≒ 6.73 [kVA]。
-
-問60。電柱の高さ10 [m]の位置に9 [kN]、高さ8 [m]の位置に4 [kN]の水平張力が加わる。支線を高さ8 [m]の位置に取り付け、支線が地面となす角度を45度とする。柱の根元まわりのモーメントが釣り合うとき、支線の張力は約何 [kN]。、、、答えは、21.6 [kN]。解説、支線の水平分力をHとすると、H × 8 = 9 × 10 + 4 × 8。H = 15.25 [kN]。支線張力T = H / cos45°。15.25 / 0.707 ≒ 21.6 [kN]。
-
-問61。支線に加わる最大張力が20 [kN]で、支線材料の引張強さが1.0 [kN/mm²]である。安全率を2.5とすると、必要な総断面積は何 [mm²]以上。、、、答えは、50 [mm²]。解説、必要断面積 = 最大張力 × 安全率 / 引張強さ。20 × 2.5 / 1.0 = 50 [mm²]。
-
-問62。中性点接地式高圧電線路で共同地線を設ける。接地箇所数nが6、1線地絡電流Igが5 [A]である。各接地箇所の接地抵抗値は何 [Ω]以下。、、、答えは、180 [Ω]。解説、R = 150n / Ig。150 × 6 / 5 = 180 [Ω]。
-
-問63。中性点接地式高圧電線路で共同地線を設ける。接地箇所数nが12、1線地絡電流Igが4 [A]である。各接地箇所の接地抵抗値は何 [Ω]以下。、、、答えは、300 [Ω]。解説、R = 150n / Ig。150 × 12 / 4 = 450 [Ω]だが、計算値が300 [Ω]を超える場合は300 [Ω]以下とする。
-
-問64。電線の引張強さが60 [kN]、使用時の最大張力が20 [kN]である。安全率は、いくつ [単位なし]。、、、答えは、3 [単位なし]。解説、安全率 n = 引張強さ / 最大張力。n = 60 / 20 = 3 [単位なし]。
-問65。電線の引張強さが80 [kN]、安全率が2.5 [単位なし]である。許容される最大張力は、何 [kN]。、、、答えは、32 [kN]。解説、最大張力 T = 引張強さ / 安全率。T = 80 / 2.5 = 32 [kN]。
-問66。電線の単位長さ当たりの重量が10 [N/m]、径間が200 [m]、引張強さが100 [kN]、たるみが2 [m]である。安全率は、いくつ [単位なし]。最大張力は水平張力とみなす。、、、答えは、4 [単位なし]。解説、D = nWS² / 8T_b より、n = 8DT_b / WS²。n = 8 × 2 × 100000 / (10 × 200²) = 4 [単位なし]。
-問67。最大需要電力が400 [kW]、設備容量の合計が500 [kW]である。需要率は、いくつ [単位なし]。、、、答えは、0.8 [単位なし]。解説、需要率 = 最大需要電力 / 設備容量。400 / 500 = 0.8 [単位なし]。
-問68。平均需要電力が300 [kW]、最大需要電力が500 [kW]である。負荷率は、いくつ [単位なし]。、、、答えは、0.6 [単位なし]。解説、負荷率 = 平均需要電力 / 最大需要電力。300 / 500 = 0.6 [単位なし]。
-問69。各需要家の最大需要電力の合計が600 [kW]、需要家群全体の合成最大需要電力が400 [kW]である。不等率は、いくつ [単位なし]。、、、答えは、1.5 [単位なし]。解説、不等率 = 各需要家の最大需要電力の合計 / 合成最大需要電力。600 / 400 = 1.5 [単位なし]。不等率は無次元で、通常は1 [単位なし]以上。
-問70。有効電力が800 [kW]、皮相電力が1000 [kVA]である。力率は、いくつ [単位なし]。、、、答えは、0.8 [単位なし]。解説、力率 cosθ = 有効電力 / 皮相電力。800 / 1000 = 0.8 [単位なし]。
-問71。入力電力が500 [kW]、出力電力が450 [kW]である。効率を小数で表すと、いくつ [単位なし]。、、、答えは、0.9 [単位なし]。解説、効率 η = 出力 / 入力。450 / 500 = 0.9 [単位なし]。
-問72。定格出力が1000 [kW]の発電設備が、24 [h]で18000 [kWh]を発電した。設備利用率を小数で表すと、いくつ [単位なし]。、、、答えは、0.75 [単位なし]。解説、設備利用率 = 発電電力量 / (定格出力 × 時間)。18000 / (1000 × 24) = 0.75 [単位なし]。
-問73。基準容量が10 [MVA]、実際の容量が8 [MVA]である。実際の容量の単位法表示は、いくつ [単位なし]。、、、答えは、0.8 [単位なし]。解説、単位法表示 = 実際値 / 基準値。8 / 10 = 0.8 [単位なし]。
-問74。高圧架空電線のうち、安全率を2.5 [単位なし]以上としなければならない電線は、何。、、、答えは、硬銅線および耐熱銅合金線以外の電線。解説、硬銅線と耐熱銅合金線だけが2.2 [単位なし]以上で、その他は2.5 [単位なし]以上。
-
-以上、74問。おつかれさまでした。`},
-  {subj:"電力", name:"距離", text:`電験三種 電力 距離の数値 24問 読み上げ原稿
-
-【使い方】プレーヤーで読み込んでください。「問○。~答えは、○○。」の行だけが問題になります。
-構成:たるみの計算 → 比例関係 → 実長 → 電線の平均高さ → 有効落差 → 落差の逆算 → 揚程 → 混合演習。計算は考える間7秒推奨。
-
-ここから本文。
-
-問1。径間200 [m]、電線の荷重20 [N/m]、水平張力20 [kN]。たるみは、何 [m]。、、、答えは、5 [m]。解説、たるみは、WS² / 8T。80万 / 16万で5 [m]。
-
-
-
-問2。径間300 [m]、荷重20 [N/m]、張力30 [kN]。たるみは、何 [m]。、、、答えは、7.5 [m]。解説、たるみは、WS² / 8T。180万 / 24万で7.5 [m]。
-
-
-
-
-
-問3。たるみは径間の2乗に比例。径間200 [m]で2 [m]なら、径間300 [m]では、何 [m]。、、、答えは、4.5 [m]。解説、1.5²で2.25倍。
-
-問4。径間150 [m]で2 [m]なら、径間300 [m]では、何 [m]。、、、答えは、8 [m]。解説、2倍の2乗で4倍。
-
-問5。たるみは張力に反比例。張力20 [kN]で6 [m]なら、24 [kN]では、何 [m]。、、、答えは、5 [m]。解説、6×20 / 24。
-
-問6。張力を2倍にすると、たるみ8 [m]は、何 [m]になる。、、、答えは、4 [m]。解説、反比例で半分。
-
-問7。たるみは荷重に比例。荷重10 [N/m]で2.5 [m]なら、荷重16 [N]では、何 [m]。、、、答えは、4 [m]。解説、2.5×1.6。
-
-問8。氷雪で荷重が1.5倍になると、たるみ4 [m]は、何 [m]になる。、、、答えは、6 [m]。解説、荷重に比例して1.5倍。
-
-問9。実長と径間の差は、8D² / (3S)。たるみ6 [m]、径間240 [m]のとき、実長は径間より、何 [m]長い。、、、答えは、0.4 [m]。解説、差は、8D² / (3S)。288 / 720で0.4 [m]。
-
-
-
-問10。たるみ9 [m]、径間270 [m]。差は、何 [m]。、、、答えは、0.8 [m]。解説、差は、8D² / (3S)。648 / 810で0.8 [m]。
-
-問11。径間240 [m]で、実長が径間より0.4 [m]長い。たるみは、何 [m]。、、、答えは、6 [m]。解説、Dは、ルートの、3S / 8 × 差。0.4×720 / 8で36。ルートで6 [m]。
-
-問12。径間160 [m]で、差が0.6 [m]。たるみは、何 [m]。、、、答えは、6 [m]。解説、Dは、ルートの、3S / 8 × 差。36のルートで6 [m]。
-
-問13。電線の平均高さは、支持点の高さ − 2 / 3たるみ。支持点15 [m]、たるみ6 [m]のとき、何 [m]。、、、答えは、11 [m]。解説、平均高さは、支持点 − 2 / 3×D。15−4で11 [m]。
-
-問14。支持点20 [m]、たるみ9 [m]。平均高さは、何 [m]。、、、答えは、14 [m]。解説、平均高さは、支持点 − 2 / 3×D。20−6で14 [m]。
-
-
-
-問15。水力発電所。総落差120 [m]、損失落差8 [m]。有効落差は、何 [m]。、、、答えは、112 [m]。解説、有効落差は、総落差−損失落差。120−8で112 [m]。
-
-
-問16。総落差200 [m]、損失3 [%]。有効落差は、何 [m]。、、、答えは、194 [m]。解説、有効落差は、総落差−損失落差。200−6で194 [m]。
-
-
-問17。出力8820 [kW]、流量20 [m³/s]、効率90 [%]。有効落差は、何 [m]。、、、答えは、50 [m]。解説、H = P / (9.8Qη)。8820 / 176.4で50 [m]。
-
-問18。出力8330 [kW]、流量10 [m³/s]、効率85 [%]。有効落差は、何 [m]。、、、答えは、100 [m]。解説、H = P / (9.8Qη)。8330 / 83.3で100 [m]。
-
-
-
-問19。揚水発電所。静落差95 [m]、揚水時の損失水頭5 [m]。ポンプの全揚程は、何 [m]。、、、答えは、100 [m]。解説、全揚程は、静落差+損失水頭。95+5で100 [m]。
-
-問20。静落差100 [m]、損失8 [m]。全揚程は、何 [m]。、、、答えは、108 [m]。解説、全揚程は、静落差+損失水頭。100+8で108 [m]。
-
-問21。静落差100 [m]、損失5 [m]。発電時の有効落差は、何 [m]。、、、答えは、95 [m]。解説、発電の有効落差は、静落差−損失。100−5で95 [m]。
-
-問22。静落差120 [m]、損失10 [m]。発電時の有効落差は、何 [m]。、、、答えは、110 [m]。解説、発電の有効落差は、静落差−損失。120−10で110 [m]。
-
-問23。反動水車の吸出し管の高さの、理論上の最大は、約何 [m]。、、、答えは、約10 [m]。解説、大気圧の水柱、約10.3 [m]が限界。
-
-
-
-
-
-
-
-
-
-
-
-
-
-問24。たるみ3 [m]の電線。張力を2倍にすると、たるみは、何 [m]。、、、答えは、1.5 [m]。解説、反比例で半分。
-
-以上、24問。おつかれさまでした。`},
-  {subj:"電力", name:"電力", text:`電験三種 電力 電力の数値 44問 読み上げ原稿
-
-【使い方】プレーヤーで読み込んでください。「問○。~答えは、○○。」の行だけが問題になります。
-構成:水力 → 揚水 → 風力 → 太陽光 → 火力 → 原子力 → 送電電力と損失 → コンデンサ → 変圧器 → 短絡容量。計算は考える間7秒推奨。
-
-ここから本文。
-
-問1。水力発電所。流量10 [m³/s]、有効落差100 [m]、総合効率90 [%]。出力は、何 [kW]。、、、答えは、8820 [kW]。解説、出力は、9.8×Q×H×効率。9.8×10×100×0.9。
-
-問2。流量20 [m³/s]、有効落差50 [m]、効率85 [%]。出力は、約何 [kW]。、、、答えは、約8330 [kW]。解説、出力は、9.8QHイータ。9.8×1000×0.85。
-
-
-
-
-問3。揚水ポンプ。流量10 [m³/s]、全揚程100 [m]、ポンプ総合効率80 [%]。入力は、何 [kW]。、、、答えは、1万2250 [kW]。解説、入力は、9.8×Q×H / 効率。9800 / 0.8。
-
-問4。流量20 [m³/s]、全揚程50 [m]、効率70 [%]。入力は、何 [kW]。、、、答えは、1万4000 [kW]。解説、入力は、9.8QH / 効率。9800 / 0.7。
-
-
-問5。出力8820 [kW]の水力発電所。流量が半分になると、出力は、何 [kW]。、、、答えは、4410 [kW]。解説、出力は流量に比例。
-
-問6。落差を2倍、流量を半分にすると、出力5000 [kW]は、何 [kW]になる。、、、答えは、5000 [kW]。解説、Q×Hが同じなら出力も同じ。
-
-問7。風力発電。空気密度1.2 [kg/m³]、受風面積100 [m²]、風速10 [m/s]。風のエネルギーは、何 [kW]。、、、答えは、60 [kW]。解説、風力は、1 / 2 × 密度 × 面積 × 風速の3乗。0.6×100×1000 [W]。
-
-問8。風速が2倍になると、60 [kW]は、何 [kW]になる。、、、答えは、480 [kW]。解説、風速の3乗に比例。8倍。
-
-問9。受風面積200 [m²]、風速10 [m/s]、空気密度1.2 [kg/m³]で、パワー係数40 [%]。出力は、何 [kW]。、、、答えは、48 [kW]。解説、出力は、風のエネルギー × パワー係数。120 [kW] × 0.4。
-
-
-問10。太陽光発電。日射強度1 [kW/m²]、面積50 [m²]、変換効率20 [%]。出力は、何 [kW]。、、、答えは、10 [kW]。解説、出力は、日射×面積×効率。1×50×0.2。
-
-
-問11。日射強度0.8 [kW/m²]、面積100 [m²]、効率20 [%]。出力は、何 [kW]。、、、答えは、16 [kW]。解説、出力は、日射×面積×効率。0.8×100×0.2。
-
-問12。火力発電所。燃料消費量1800 [kg/h]、発熱量4万 [kJ/kg]、熱効率40 [%]。発電出力は、何 [kW]。、、、答えは、8000 [kW]。解説、出力は、燃料×発熱量×効率 / 3600。1800×4万×0.4 / 3600。
-
-
-問13。LNG7200 [kg/h]、発熱量5万4000 [kJ/kg]、効率50 [%]。出力は、何 [MW]。、、、答えは、54 [MW]。解説、出力は、燃料×発熱量×効率 / 3600。燃料の熱入力に効率を乗じる。
-
-問14。原子力発電所。熱出力3000 [MW]、熱効率3分の1。電気出力は、何 [MW]。、、、答えは、1000 [MW]。解説、原子力の効率は約3分の1。
-
-
-問15。コンバインドサイクル。燃料入力100 [MW]、総合効率60 [%]。出力は、何 [MW]。、、、答えは、60 [MW]。解説、ガスと蒸気の組み合わせで高効率。
-
-問16。三相送電線。154 [kV]、電流300 [A]、力率1。送電電力は、約何 [MW]。、、、答えは、約80 [MW]。解説、Pは、√3 × V×I×cosθ。√3×154×0.3。
-
-問17。線路損失。電流100 [A]、1線の抵抗5 [Ω]、三相3線式。損失は、何 [kW]。、、、答えは、150 [kW]。解説、損失は、3×Iの2乗×R。3×1万×5。
-
-問18。電流200 [A]、1線の抵抗2 [Ω]。三相の損失は、何 [kW]。、、、答えは、240 [kW]。解説、損失は、3×Iの2乗×R。3×4万×2。
-
-問19。電流を半分にすると、損失200 [kW]は、何 [kW]になる。、、、答えは、50 [kW]。解説、損失は電流の2乗に比例。4分の1。
-
-問20。送電電力一定で電圧を2倍にすると、損失100 [kW]は、何 [kW]になる。、、、答えは、25 [kW]。解説、電流が半分になり損失は4分の1。
-
-問21。電力一定で力率を0.8から1.0に改善。損失100 [kW]は、何 [kW]になる。、、、答えは、64 [kW]。解説、損失は力率の2乗に反比例。0.8²。
-
-問22。力率を0.6から1.0に改善。損失100 [kW]は、何 [kW]になる。、、、答えは、36 [kW]。解説、0.6²で0.36倍。
-
-問23。負荷400 [kW]、力率80 [%]を100 [%]に改善。必要なコンデンサ容量は、何 [kvar]。、、、答えは、300 [kvar]。解説、Q = P(tanθ1 − tanθ2)。400×0.75。
-
-
-
-問24。皮相電力500 [kVA]、力率80 [%]。有効電力は、何 [kW]。、、、答えは、400 [kW]。解説、500×0.8。
-
-問25。皮相1000 [kVA]、有効800 [kW]。無効電力は、何 [kvar]。、、、答えは、600 [kvar]。解説、3対4対5の直角三角形。
-
-
-問26。デルタ結線の単相変圧器100 [kVA]3台のうち、1台が故障してV結線に。出力は、約何 [kVA]。、、、答えは、約173 [kVA]。解説、300から173へ、大きく減る。
-
-問27。変圧器の並行運転。同容量で [%]インピーダンスが2 [%]と4 [%]。負荷900 [kVA]のとき、2 [%]の変圧器の分担は、何 [kVA]。、、、答えは、600 [kVA]。解説、分担は [%]インピーダンスの逆比。2対1。
-
-問28。[%]インピーダンスが3 [%]と6 [%]の変圧器。負荷600 [kVA]のとき、3 [%]側の分担は、何 [kVA]。、、、答えは、400 [kVA]。解説、逆比2対1で2 / 3。
-
-問29。同じ [%]インピーダンスで、容量500と1000の変圧器。負荷1200のとき、1000 [kVA]側の分担は、何 [kVA]。、、、答えは、800 [kVA]。解説、容量に比例して1対2。
-
-問30。発電端出力100 [MW]、所内率5 [%]。送電端出力は、何 [MW]。、、、答えは、95 [MW]。解説、送電端出力 = 発電端出力 × (1 − 所内率)。100×0.95。
-
-
-問31。送電端出力95 [MW]、所内率5 [%]。発電端出力は、何 [MW]。、、、答えは、100 [MW]。解説、発電端は、送電端 / 1−所内率。95 / 0.95。
-
-問32。1 [km]あたり充電容量30 [kvar]のケーブル、こう長20 [km]。充電容量は、何 [kvar]。、、、答えは、600 [kvar]。解説、長さに比例。
-
-問33。同じケーブルで10 [km]なら、何 [kvar]。、、、答えは、300 [kvar]。解説、30×10。
-
-問34。66 [kV]系統、三相短絡電流8.75 [kA]。短絡容量は、約何 [MVA]。、、、答えは、約1000 [MVA]。解説、短絡容量は、√3 × V×短絡電流。√3×66×8.75。
-
-問35。基準容量10 [MVA]、[%]インピーダンス5 [%]。短絡容量は、何 [MVA]。、、、答えは、200 [MVA]。解説、短絡容量は、基準容量×100 / [%]インピーダンス。10×20。
-
-問36。基準容量100 [MVA]、[%]インピーダンス25 [%]。短絡容量は、何 [MVA]。、、、答えは、400 [MVA]。解説、短絡容量は、基準容量×100 / [%]インピーダンス。100×4。
-
-問37。直流送電。電圧500 [kV]、電流2 [kA]。送電電力は、何 [MW]。、、、答えは、1000 [MW]。解説、直流はブイ×アイ。√3も力率もない。
-
-問38。太陽電池モジュール1枚400 [W]を25枚。合計出力は、何 [kW]。、、、答えは、10 [kW]。解説、400×25で1万 [W]。
-
-問39。火力発電所の熱消費率 H が9000 [kJ/kWh]のとき、熱効率 η は何 [%]。、、、答えは、40 [%]。解説、η = 3600 / H。3600 / 9000 = 0.4より40 [%]。
-問40。変圧器の1日の出力電力量を、出力電力量と1日の損失電力量の合計で割った効率を何という。、、、答えは、全日効率。解説、負荷が時間で変化する配電用変圧器では、全日効率が重要となる。
-問41。定格銅損が4 [kW]の変圧器を、定格電流の50 [%]で運転する。銅損は何 [kW]。、、、答えは、1 [kW]。解説、銅損は電流の2乗に比例する。4 × 0.5² = 1 [kW]。
-問42。出力100 [kW]の蓄電池が、一定出力で4 [h]放電できる。放電可能電力量は何 [kWh]。、、、答えは、400 [kWh]。解説、E = P × t。100 × 4 = 400 [kWh]。
-問43。蓄電設備に500 [kWh]を充電し、400 [kWh]を取り出した。往復効率は何 [%]。、、、答えは、80 [%]。解説、η = 放電電力量 / 充電電力量 × 100。400 / 500 × 100 = 80 [%]。
-問44。三相回路の線間電圧が6.6 [kV]、短絡電流が10 [kA]のとき、短絡容量は約何 [MVA]。、、、答えは、114 [MVA]。解説、Ssc = √3VI。√3 × 6.6 × 10 ≒ 114 [MVA]。
-
-
-以上、44問。おつかれさまでした。`},
-  {subj:"電力", name:"電流", text:`電験三種 電力 電流の数値 36問 読み上げ原稿
-
-【使い方】プレーヤーで読み込んでください。「問○。~答えは、○○。」の行だけが問題になります。
-構成:送電線の電流 → 損失からの逆算 → 変流器 → 変圧器の定格電流 → 短絡電流 → 充電電流 → 単相3線 → 力率と電流 → 地絡電流。計算は考える間7秒推奨。
-
-ここから本文。
-
-問1。三相送電線。送電電力80 [MW]、電圧154 [kV]、力率1。線電流は、約何 [A]。、、、答えは、約300 [A]。解説、Iは、P / √3×V×cosθ。8万 / √3×154。
-
-
-問2。送電電力約914 [kW]、電圧6.6 [kV]、力率80 [%]。線電流は、何 [A]。、、、答えは、100 [A]。解説、Iは、P / √3Vcosθ。分母は約9.14。
-
-問3。三相3線式の損失が150 [kW]、1線の抵抗5 [Ω]。線電流は、何 [A]。、、、答えは、100 [A]。解説、Iは、ルートの、損失/3R。150キロ / 15で1万。ルートで100。
-
-問4。損失240 [kW]、1線の抵抗2 [Ω]。線電流は、何 [A]。、、、答えは、200 [A]。解説、Iは、ルートの、損失/3R。240キロ / 6で4万。ルートで200。
-
-問5。変流器、変流比100対5。一次に80 [A]流れると、二次は、何 [A]。、、、答えは、4 [A]。解説、二次は、一次 / 変流比。80 / 20。
-
-
-問6。変流比300対5。二次に4 [A]流れているとき、一次は、何 [A]。、、、答えは、240 [A]。解説、4×60。
-
-
-問7。三相変圧器500 [kVA]、6600 [V]。定格一次電流は、約何 [A]。、、、答えは、約43.7 [A]。解説、I = S / (√3V)。50万 / √3×6600。
-
-
-問8。単相変圧器50 [kVA]、6600 [V]。一次電流は、約何 [A]。、、、答えは、約7.6 [A]。解説、単相は、S / V。5万 / 6600。
-
-問9。単相10 [kVA]、200 [V]。二次電流は、何 [A]。、、、答えは、50 [A]。解説、1万 / 200。
-
-問10。三相200 [kVA]、200 [V]。二次電流は、約何 [A]。、、、答えは、約577 [A]。解説、20万 / √3×200。
-
-問11。定格電流875 [A]、[%]インピーダンス10 [%]。三相短絡電流は、何 [A]。、、、答えは、8750 [A]。解説、短絡電流は、定格電流×100 / [%]インピーダンス。875×10。
-
-問12。定格875 [A]、[%]インピーダンス5 [%]。短絡電流は、何 [kA]。、、、答えは、17.5 [kA]。解説、短絡電流は、定格×100 / %Z。875×20。
-
-
-
-問13。ケーブルの充電電流が1 [km]あたり0.5 [A]。こう長40 [km]では、何 [A]。、、、答えは、20 [A]。解説、長さに比例。
-
-問14。1 [km]あたり0.9 [A]、こう長30 [km]。充電電流は、何 [A]。、、、答えは、27 [A]。解説、0.9×30。
-
-問15。単相3線式。上の電圧線に20 [A]、下に15 [A]。中性線の電流は、何 [A]。、、、答えは、5 [A]。解説、中性線には差が流れる。
-
-問16。両方の電圧線に30 [A]ずつ。中性線は、何 [A]。、、、答えは、0 [A]。解説、平衡すれば中性線はゼロ。
-
-
-
-問17。有効電力一定で、力率を0.8から1.0に改善。電流100 [A]は、何 [A]になる。、、、答えは、80 [A]。解説、電流は力率に反比例。
-
-問18。力率0.5から1.0に改善。電流200 [A]は、何 [A]になる。、、、答えは、100 [A]。解説、半分になる。
-
-問19。電力一定で電圧を2倍に昇圧。電流300 [A]は、何 [A]になる。、、、答えは、150 [A]。解説、電流は電圧に反比例。
-
-問20。デルタ結線。相電流10 [A]のとき、線電流は、約何 [A]。、、、答えは、約17.3 [A]。解説、デルタの線電流は√3倍。
-
-問21。スター結線。相電流10 [A]のとき、線電流は、何 [A]。、、、答えは、10 [A]。解説、スターは線と相が同じ。
-
-問22。三相コンデンサ100 [kvar]、6.6 [kV]。電流は、約何 [A]。、、、答えは、約8.75 [A]。解説、I = Q / (√3V)。10万 / √3×6600。
-
-問23。三相コンデンサ200 [kvar]、6.6 [kV]。電流は、何 [A]。、、、答えは、約17.5 [A]。解説、容量2倍で電流2倍。
-
-問24。単相200 [V]、消費電力4 [kW]、力率1。電流は、何 [A]。、、、答えは、20 [A]。解説、I = P / V。4000 / 200。
-
-問25。単相100 [V]、1.5 [kW]。電流は、何 [A]。、、、答えは、15 [A]。解説、1500 / 100。
-
-問26。三相200 [V]、力率1、約10.4 [kW]。線電流は、何 [A]。、、、答えは、30 [A]。解説、1万400 / √3×200。
-
-問27。直流送電。500 [kV]で1000 [MW]。電流は、何 [kA]。、、、答えは、2 [kA]。解説、直流は、P / V。100万 [kW] / 50万 [V]。
-
-問28。変圧比30の変圧器。一次に10 [A]流れると、二次は、何 [A]。、、、答えは、300 [A]。解説、電流は巻数比の逆。
-
-
-問29。変圧比30。二次に600 [A]流れているとき、一次は、何 [A]。、、、答えは、20 [A]。解説、600 / 30。
-
-問30。同じ送電線を2回線並列にすると、全体300 [A]のとき、1回線あたり、何 [A]。、、、答えは、150 [A]。解説、並列で半分ずつ。
-
-
-問31。消弧リアクトル接地方式の、1線地絡電流は、ほぼ何 [A]。、、、答えは、ほぼ0 [A]。解説、リアクトルと対地静電容量の並列共振で打ち消す。
-
-問32。抵抗接地方式。中性点抵抗100 [Ω]、相電圧約3810 [V]。1線完全地絡の電流は、約何 [A]。、、、答えは、約38 [A]。解説、地絡電流は、相電圧 / 中性点抵抗。3810 / 100。
-
-問33。中性点抵抗381 [Ω]、相電圧3810 [V]。地絡電流は、何 [A]。、、、答えは、10 [A]。解説、3810 / 381。
-
-問34。単相2線式で電圧降下20 [V]、電線1本の抵抗0.1 [Ω]、力率1。電流は、何 [A]。、、、答えは、100 [A]。解説、Iは、e / 2R。20 / 0.2。
-
-問35。三相3線式で電圧降下約173 [V]、1線のインピーダンス項が1 [Ω]。電流は、何 [A]。、、、答えは、100 [A]。解説、I = e / (√3Z)。173 / 1.73。
-
-問36。定格電流100 [A]の変圧器。励磁電流が定格の3 [%]なら、何 [A]。、、、答えは、3 [A]。解説、無負荷でも流れる小さな電流。
-
-
-
-
-
-以上、36問。おつかれさまでした。`},
-  {subj:"電力", name:"電圧", text:`電験三種 電力 電圧の数値 30問 読み上げ原稿
-
-【使い方】プレーヤーで読み込んでください。「問○。~答えは、○○。」の行だけが問題になります。
-構成:標準電圧 → 相電圧と対地電圧 → 変圧比とタップ → 電圧降下 → 送電端と受電端 → 地絡時の電圧上昇。計算は考える間7秒推奨。
-
-ここから本文。
-
-問1。我が国の高圧配電の標準電圧は、何 [V]。、、、答えは、6600 [V]。解説、高圧配電線は6.6 [kV]が標準。
-
-問2。低圧配電の単相3線式。100 [V]と、何 [V]。、、、答えは、200 [V]。解説、100、200 [V]の単相3線式。
-
-問3。低圧の三相動力の標準は、何 [V]。、、、答えは、200 [V]。解説、三相200 [V]。
-
-問4。我が国で運用されている最高の公称送電電圧は、何 [kV]。、、、答えは、500 [kV]。解説、基幹系統は500 [kV]。
-
-問5。三相Y結線で中性点が接地され、平衡している66 [kV]系統の相電圧、つまり対地電圧は、約何 [kV]。、、、答えは、約38 [kV]。解説、V相 = V線間 / √3。66 / √3 ≒ 38 [kV]。
-
-
-問6。6600 [V]の相電圧は、約何 [V]。、、、答えは、約3810 [V]。解説、6600 / √3。
-
-
-問7。巻数比30の変圧器。一次に6600 [V]を加えると、二次は、何 [V]。、、、答えは、220 [V]。解説、二次は、一次 / 巻数比。6600 / 30。
-
-問8。巻数比30。二次を210 [V]にしたいとき、一次は、何 [V]。、、、答えは、6300 [V]。解説、210×30。
-
-
-問9。定格6600、210 [V]の変圧器で、タップを6750 [V]に設定。一次が6600 [V]のとき、二次は、約何 [V]。、、、答えは、約205 [V]。解説、二次は、一次 / タップ電圧 × 定格二次。6600 / 6750 × 210。
-
-
-問10。三相の電圧降下。電流100 [A]、抵抗0.5 [Ω]、リアクタンス0.5 [Ω]、力率0.8。降下は、約何 [V]。、、、答えは、約121 [V]。解説、eは、√3×I × Rcos + Xsin。0.7×100×√3。
-
-問11。電流100 [A]、Rcosθ + Xsinθが1 [Ω]。三相の降下は、約何 [V]。、、、答えは、約173 [V]。解説、√3×100×1。
-
-
-問12。単相2線式。電流50 [A]、電線1本の抵抗0.2 [Ω]、力率1。降下は、何 [V]。、、、答えは、20 [V]。解説、単相のeは、2×I × Rcos + Xsin。2×50×0.2。
-
-問13。単相2線式。電流30 [A]、1本あたりの項が0.5 [Ω]。降下は、何 [V]。、、、答えは、30 [V]。解説、2×30×0.5。
-
-問14。送電端6600 [V]、電圧降下300 [V]。受電端は、何 [V]。、、、答えは、6300 [V]。解説、送電端−降下。
-
-
-問15。受電端6600 [V]、降下150 [V]。送電端は、何 [V]。、、、答えは、6750 [V]。解説、送電端電圧 = 受電端電圧 + 電圧降下。
-
-問16。電圧降下率5 [%]、受電端6600 [V]。電圧降下は、何 [V]。、、、答えは、330 [V]。解説、eは、受電端電圧×降下率。6600×0.05。
-
-問17。単相3線式の、電圧線と中性線の間の電圧は、何 [V]。、、、答えは、100 [V]。解説、両外線間は200 [V]。
-
-問18。直流送電、±250 [kV]。極間の電圧は、何 [kV]。、、、答えは、500 [kV]。解説、往復あわせて500。
-
-問19。6.6 [kV]非接地系で1線完全地絡。健全相の対地電圧は、何 [V]まで上昇する。、、、答えは、6600 [V]。解説、相電圧の√3倍。線間電圧と同じになる。
-
-問20。275 [kV]の、ひとつ上の公称電圧は、何 [kV]。、、、答えは、500 [kV]。解説、187、275、500と上がる。
-
-問21。柱上変圧器、単相3線式の二次側。両外線間の定格は、何 [V]。、、、答えは、210 [V]。解説、105、210 [V]が定格。
-
-問22。同じく、電圧線と中性線の間の定格は、何 [V]。、、、答えは、105 [V]。解説、210の半分。
-
-
-
-
-
-
-
-
-
-問23。三相200 [V]、デルタ結線で1端子接地の対地電圧は、何 [V]。、、、答えは、200 [V]。解説、中性点がないので線間そのまま。
-
-問24。単相3線式100、200 [V]の対地電圧は、何 [V]。、、、答えは、100 [V]。解説、中性線が接地されている。
-
-問25。6.6 [kV]非接地系の1線地絡時、中性点の対地電位は、約何 [V]まで上昇する。、、、答えは、約3810 [V]。解説、相電圧分だけ持ち上がる。
-
-
-
-
-問26。一次側の系統電圧が高め、6900 [V]で安定している。二次を210 [V]にするには、タップは、何 [V]を選ぶ。、、、答えは、6900 [V]。解説、一次実電圧に合わせたタップを選ぶ。
-
-
-問27。低圧210 [V]配電で、電圧降下を3 [%]以内にしたい。降下は、約何 [V]以内。、、、答えは、約6.3 [V]。解説、210×0.03。
-
-
-問28。単相3線式にバランサを設置すると、両側の電圧は、何 [V]ずつに平衡する。、、、答えは、105 [V]。解説、不平衡による電圧の差がなくなる。
-
-問29。スポットネットワーク方式の受電電圧の代表例は、何 [kV]。、、、答えは、22 [kV]。解説、22または33 [kV]で受電。
-
-問30。特別高圧受電の需要家の受電電圧の例は、何 [kV]。、、、答えは、66 [kV]。解説、大規模工場などは66 [kV]受電。
-
-
-以上、30問。おつかれさまでした。`},
-  {subj:"電力", name:"期間", text:`電験三種 電力 期間の数値 20問 読み上げ原稿
-
-【使い方】プレーヤーで読み込んでください。「問○。~答えは、○○。」の行だけが問題になります。
-構成:周波数と周期 → 遮断時間 → 雷インパルス → 貯水池・調整池・揚水の継続時間 → 設備利用率 → 計算の基礎。計算は考える間7秒推奨。
-
-ここから本文。
-
-問1。50 [Hz]の交流の周期は、何 [s]。、、、答えは、0.02 [s]。解説、周期は、1/周波数。1/50。
-
-
-
-
-問2。3サイクル、60 [Hz]では、何 [s]。、、、答えは、0.05 [s]。解説、3 / 60。
-
-問3。雷インパルス電圧の標準波形。波頭長は、何 [μs]。、、、答えは、1.2 [μs]。解説、1.2、50 [μs]の波形。
-
-問4。同じく、波尾長は、何 [μs]。、、、答えは、50 [μs]。解説、波高値の半分に下がるまでの時間。
-
-問5。開閉インパルスの標準波形の波頭長は、何 [μs]。、、、答えは、250 [μs]。解説、250、2500 [μs]。雷よりゆるやか。
-
-問6。送電線の高速再閉路は、事故除去後、約何 [s]で再投入する。、、、答えは、約1 [s]。解説、アークの消滅を待って約1 [s]。
-
-問7。高圧コンデンサの放電装置は、開路後、何 [min]以内に50 [V]以下にする。、、、答えは、5 [min]。解説、残留電荷による感電を防ぐ。
-
-問8。貯水池式。有効貯水量7万2000 [m³]、使用水量20 [m³/s]。継続時間は、何 [h]。、、、答えは、1 [h]。解説、時間は、貯水量 / 使用水量。7万2000 / 20で3600 [s]。
-
-問9。有効貯水量9万 [m³]、使用水量25 [m³/s]。継続時間は、何 [h]。、、、答えは、1 [h]。解説、時間は、貯水量/使用水量。9万 / 25で3600 [s]。
-
-
-
-問10。調整池式。有効容量3万6000 [m³]、自然流量4 [m³/s]、使用水量14 [m³/s]。ピーク継続時間は、何 [h]。、、、答えは、1 [h]。解説、不足は、使用−自然で、10 [m³/s]。3万6000 / 10で3600 [s]。
-
-
-問11。有効容量7万2000 [m³]、自然流量6 [m³/s]、使用水量16 [m³/s]。継続時間は、何 [h]。、、、答えは、2 [h]。解説、不足は10 [m³/s]。7万2000 / 10で7200 [s]。
-
-
-問12。揚水。10万8000 [m³]をくみ上げる。ポンプの水量15 [m³/s]。所要時間は、何 [h]。、、、答えは、2 [h]。解説、時間は、揚水量 / ポンプ水量。10万8000 / 15で7200 [s]。
-
-
-問13。2万1600 [m³]、3 [m³/s]。所要時間は、何 [h]。、、、答えは、2 [h]。解説、時間は、揚水量/ポンプ水量。2万1600 / 3で7200 [s]。
-
-
-
-
-
-
-
-
-
-
-問14。年間の時間数は、何 [h]。、、、答えは、8760 [h]。解説、365×24。
-
-問15。30日間の時間数は、何 [h]。、、、答えは、720 [h]。解説、30×24。
-
-問16。1日の使用電力量から平均電力を出すときは、何 [h]で割る。、、、答えは、24 [h]。解説、日負荷率の計算の基礎。
-
-問17。設備利用率10 [%]の発電所。年間の等価稼働時間は、何 [h]。、、、答えは、876 [h]。解説、8760×0.1。
-
-
-
-
-問18。風力、設備利用率25 [%]。等価稼働時間は、何 [h]。、、、答えは、2190 [h]。解説、8760×0.25。
-
-問19。需要電力、いわゆるデマンドの計量時限は、何 [min]。、、、答えは、30 [min]。解説、30 [min]ごとの平均電力で計る。
-
-問20。変圧器の全日効率の、全日とは、何 [h]。、、、答えは、24 [h]。解説、1日を通した効率。
-
-
-
-
-
-
-
-
-
-
-
-以上、20問。おつかれさまでした。`},
-  {subj:"電力", name:"用語", text:`電験三種 電力 用語 55問 読み上げ原稿
-
-【使い方】プレーヤーで読み込んでください。「問○。~答えは、○○。」の行だけが問題になります。
-構成:水力 → 火力 → 原子力 → 再エネ → 変電 → 送電 → 配電 → ケーブル。
-
-ここから本文。
-
-問1。高落差で、ノズルから噴出した水をバケットに当てる水車を、何という。、、、答えは、ペルトン水車。解説、高落差、小流量むきの衝動水車。
-
-問2。中落差から高落差で、最も広く使われる水車を、何という。、、、答えは、フランシス水車。解説、適用範囲が最も広い反動水車。
-
-問3。低落差で、羽根の角度を変えられるプロペラ形の水車を、何という。、、、答えは、カプラン水車。解説、可動羽根で部分負荷でも高効率。
-
-問4。ペルトン水車は、衝動水車と反動水車の、どちら。、、、答えは、衝動水車。解説、速度エネルギーだけを利用する。
-
-問5。フランシス水車は、どちらに分類される。、、、答えは、反動水車。解説、圧力エネルギーも利用する。
-
-問6。水車内で圧力が下がり、気泡が発生して壊食を起こす現象を、何という。、、、答えは、キャビテーション。解説、吸出し高さを高くしすぎると起きやすい。
-
-問7。反動水車の出口から放水面までの落差を回収する管を、何という。、、、答えは、吸出し管。解説、ドラフトチューブともいう。
-
-問8。圧力水路と水圧管の間に設け、水撃圧をやわらげる設備を、何という。、、、答えは、サージタンク。解説、水位の振動で圧力変化を吸収する。
-
-問9。弁を急に閉じたとき、水圧管内に生じる急激な圧力上昇を、何という。、、、答えは、水撃作用。解説、ウォーターハンマともいう。
-
-問10。夜間の余剰電力で水をくみ上げ、ピーク時に発電する方式を、何という。、、、答えは、揚水式発電。解説、大容量の電力貯蔵として働く。
-
-問11。火力ボイラで、煙道ガスの熱で給水を予熱する装置を、何という。、、、答えは、節炭器。解説、エコノマイザ。排熱回収で効率向上。
-
-問12。煙道ガスの熱で燃焼用空気を予熱する装置を、何という。、、、答えは、空気予熱器。解説、節炭器のさらに下流に置く。
-
-問13。ドラムからの飽和蒸気を、さらに加熱する装置を、何という。、、、答えは、過熱器。解説、過熱蒸気にしてタービンへ送る。
-
-問14。タービンの排気を冷却水で冷やして水に戻す装置を、何という。、、、答えは、復水器。解説、真空を作りタービン出力を増やす。
-
-問15。高圧タービンの排気を、ボイラで再び加熱してから中低圧タービンへ送るサイクルを、何という。、、、答えは、再熱サイクル。解説、熱効率が向上し、湿り度も下がる。
-
-問16。タービンの途中から蒸気を抜き出して、給水を加熱するサイクルを、何という。、、、答えは、再生サイクル。解説、抽気で給水加熱。復水器の損失を減らす。
-
-問17。ドラムを持たず、超臨界圧にも対応できるボイラを、何という。、、、答えは、貫流ボイラ。解説、水が管を一度通る間に蒸気になる。
-
-問18。ガスタービンと蒸気タービンを組み合わせた発電方式を、何という。、、、答えは、コンバインドサイクル。解説、排熱を回収して総合効率60 [%]級。
-
-問19。汽力発電の基本となる熱サイクルを、何という。、、、答えは、ランキンサイクル。解説、ボイラ、タービン、復水器、給水ポンプの循環。
-
-問20。汽力発電所で、最も大きな熱損失が生じる場所は、どこ。、、、答えは、復水器。解説、入熱の約半分を冷却水に捨てる。
-
-問21。軽水を減速材と冷却材に使い、発生した蒸気を直接タービンへ送る原子炉を、何という。、、、答えは、沸騰水型、BWR。解説、原子炉で沸騰させる直接サイクル。
-
-問22。一次系を加圧して沸騰させず、蒸気発生器を介する原子炉を、何という。、、、答えは、加圧水型、PWR。解説、タービン系に放射性物質が行かない。
-
-問23。核分裂で生じた高速中性子の速度を落とすものを、何という。、、、答えは、減速材。解説、軽水炉では水がになう。
-
-問24。中性子を吸収して、核分裂の反応度を調整する棒を、何という。、、、答えは、制御棒。解説、抜き差しで出力を調整する。
-
-問25。天然ウランのウラン235の割合を高めることを、何という。、、、答えは、濃縮。解説、軽水炉は3から5 [%]程度の低濃縮ウラン。
-
-問26。太陽電池の直流を交流に変換し、系統に連系する装置を、何という。、、、答えは、パワーコンディショナ。解説、インバータと保護装置の一体形。
-
-問27。運転中に電圧比を変えられる、変圧器のタップ切換装置を、何という。、、、答えは、負荷時タップ切換装置。解説、送電を止めずに電圧調整できる。
-
-問28。重負荷時に進み無効電力を供給して、電圧を支える調相設備は、何。、、、答えは、電力用コンデンサ。解説、進相コンデンサで力率改善。
-
-問29。軽負荷時の電圧上昇、フェランチ効果をおさえる調相設備は、何。、、、答えは、分路リアクトル。解説、遅れ無効電力を吸収する。
-
-問30。回転機で、進みも遅れも連続的に調整できる調相設備は、何。、、、答えは、同期調相機。解説、無負荷の同期電動機。
-
-問31。パワーエレクトロニクスで無効電力を高速に制御する装置を、何という。、、、答えは、SVC、静止形無効電力補償装置。解説、サイリスタで応答が速い。
-
-問32。SF6ガスで絶縁し、変電所を大幅に小型化した開閉装置を、何という。、、、答えは、ガス絶縁開閉装置、GIS。解説、都市部の変電所で活躍。
-
-問33。真空中のアーク拡散を利用した遮断器を、何という。、、、答えは、真空遮断器。解説、高圧で広く使われる。
-
-問34。SF6ガスの消弧能力を利用した遮断器を、何という。、、、答えは、ガス遮断器。解説、超高圧系統の主力。
-
-問35。長距離大電力や、周波数の異なる系統の連系に有利な送電方式は、何。、、、答えは、直流送電。解説、充電電流がなく、安定度の制約もない。
-
-問36。軽負荷の長距離送電線で、受電端電圧が送電端より高くなる現象を、何という。、、、答えは、フェランチ効果。解説、進み電流と線路リアクタンスが原因。
-
-問37。電線表面の電界が高くなり、空気の絶縁が部分的に破れて発光や騒音を生じる現象を、何という。、、、答えは、コロナ放電。解説、電線を太くすると起きにくい。
-
-問38。コロナ対策として、1相の電線を複数本に分ける方式を、何という。、、、答えは、多導体方式。解説、等価的に太い電線になる。
-
-問39。三相のインダクタンスなどを平衡させるため、電線の位置を区間ごとに入れ替えることを、何という。、、、答えは、ねん架。解説、静電容量の不平衡も解消する。
-
-問40。微風振動による素線切れを防ぐため、支持点付近の電線に巻き付ける補強材を、何という。、、、答えは、アーマロッド。解説、ダンパとセットで振動対策。
-
-問41。電線の振動エネルギーを吸収する、おもり状の器具を、何という。、、、答えは、ダンパ。解説、支持点近くに取り付ける。
-
-問42。雷から送電線を遮へいするため、鉄塔の最上部に張る接地された電線を、何という。、、、答えは、架空地線。解説、遮へい角が小さいほど効果が高い。
-
-問43。鉄塔に雷撃があり、塔の電位が上がって、がいし装置を逆方向に放電する現象を、何という。、、、答えは、逆フラッシオーバ。解説、対策は塔脚接地抵抗の低減。
-
-問44。交流では電流が導体の表面に集中する。この現象を、何という。、、、答えは、表皮効果。解説、実効抵抗が増える。周波数が高いほど顕著。
-
-問45。鋼のより線のまわりにアルミ線をより合わせた電線を、何という。、、、答えは、鋼心アルミより線、ACSR。解説、軽くて強い。送電線の主力。
-
-問46。配電柱の上に設置し、6600 [V]を低圧に落とす変圧器を、何という。、、、答えは、柱上変圧器。解説、単相3線式で引き込むことが多い。
-
-問47。幹線から枝分かれして広がる、最も一般的な配電方式を、何という。、、、答えは、樹枝状方式。解説、簡単で安価だが信頼度は低め。
-
-問48。複数の柱上変圧器の低圧側を、並列に連結する配電方式を、何という。、、、答えは、低圧バンキング方式。解説、電圧変動が減るが、カスケーディングに注意。
-
-問49。複数の配電線から受電し、ネットワークプロテクタを介して低圧側を並列にする、信頼度の高い方式を、何という。、、、答えは、スポットネットワーク方式。解説、都心の大規模ビルで採用。
-
-問50。CVケーブルの絶縁体に、水分と電界で樹枝状の劣化が進む現象を、何という。、、、答えは、水トリー。解説、CVケーブルの代表的な劣化要因。
-
-問51。保護区間へ流れ込む電流と、保護区間から流れ出す電流との差によって内部故障を検出するリレーを何という。、、、答えは、差動リレー。解説、変圧器、発電機、母線などの内部故障を高速に検出する。
-問52。電圧を電流で割って得られる見掛けのインピーダンスにより、故障点までの距離を判定するリレーを何という。、、、答えは、距離リレー。解説、見掛けのインピーダンスが小さいほど、故障点が近いと判定する。
-問53。ある期間の需要電力を、大きい順に並べ替えて作る曲線を何という。、、、答えは、負荷持続曲線。解説、各需要電力以上となる累積時間を表し、設備容量や運用計画の検討に用いる。
-問54。絶縁物の内部や表面の一部分だけで発生し、電極間を完全には橋絡しない放電を何という。、、、答えは、部分放電。解説、部分放電が継続すると絶縁劣化が進行し、絶縁破壊につながることがある。
-問55。機器の絶縁耐力と、避雷器などの保護レベルを合理的に組み合わせることを何という。、、、答えは、絶縁協調。解説、過電圧保護装置と機器の絶縁強度を適切に組み合わせる。
-
-
-以上、55問。おつかれさまでした。`},
-  {subj:"電力", name:"公式", text:`電験三種 電力 公式 67問 読み上げ原稿
-
-【使い方】プレーヤーで読み込んでください。「問○。~答えは、○○。」の行だけが問題になります。
-公式は通常の数式記号で表示し、読み上げ時だけ変換表を適用します。
-構成:発電 → 効率 → たるみ → 電圧降下 → 損失 → 充電電流 → 短絡 → 変圧器 → 三相の関係 → 水力の時間。
-
-ここから本文。
-
-問1。水力発電所の出力 P の式は何。、、、答えは、P = 9.8QHη [kW]。解説、Qの単位は [m³/s]、Hの単位は [m]、ηは水車と発電機を合わせた効率。
-問2。揚水ポンプの入力電力 Pin [kW]の式は何。、、、答えは、Pin = 9.8QH / η [kW]。解説、Qの単位は [m³/s]、Hの単位は [m]、ηはポンプと電動機を合わせた効率。
-問3。風力発電の風のエネルギーの式は、何。、、、答えは、1/2×ρ [kg/m³]×A [m²]×v³。解説、風速の3乗がポイント。
-問4。風速が2倍になると、風力の出力は、何倍。、、、答えは、8倍。解説、3乗則。
-
-問5。太陽光発電の出力の式は、何。、、、答えは、日射強度 [kW/m²]×面積 [m²]×変換効率。解説、日射1 [kW/m²]が基準。
-問6。火力の発電端熱効率の式は、何。、、、答えは、3600×発電電力量 [kWh]/(燃料消費量 [kg]×発熱量 [kJ/kg])。解説、1 [kWh]は3600 [kJ]。
-問7。送電端効率の式は、何。、、、答えは、発電端効率×(1−所内率)。解説、所内で使う分を差し引く。
-
-問8。所内率の式は、何。、、、答えは、所内電力/発電端電力。解説、数 [%]程度。
-
-問9。電線のたるみの式は、何。、、、答えは、W [N/m]×S [m]²/(8×T [N])。解説、WS² / 8T。
-問10。電線の実長の式は、何。、、、答えは、S [m]+8×D [m]²/(3×S [m])。解説、径間よりわずかに長い。
-問11。たるみの式を張力について解くと、何。、、、答えは、W [N/m]×S [m]²/(8×D [m])。解説、DとTを入れ替えるだけ。
-問12。電線の平均高さの式は、何。、、、答えは、支持点の高さ [m]−(2/3)×D [m]。解説、たるみの2 / 3だけ下がる。
-問13。単相2線式の電圧降下の式は、何。、、、答えは、2×I [A]×(R [Ω]cosθ+X [Ω]sinθ)。解説、往復2本分。
-問14。三相3線式の電圧降下の式は、何。、、、答えは、√3×I [A]×(R [Ω]cosθ+X [Ω]sinθ)。解説、三相は√3倍。
-問15。電圧降下率の式は、何。、、、答えは、電圧降下 [V]/受電端電圧 [V]×100。解説、分母は受電端。
-問16。三相3線式で、各線の電流が I、1線の抵抗が R のとき、電力損失の式は何。、、、答えは、P_loss = 3I²R。解説、各線の損失 I²R が3線分ある。
-
-問17。送電電力一定のとき、損失は電圧の、何に反比例する。、、、答えは、2乗。解説、昇圧のメリットの根拠。
-
-問18。送電電力と線間電圧が一定のとき、線路損失は力率の何乗に反比例する。、、、答えは、2乗。解説、I = P / (√3Vcosθ)であり、P_loss = 3I²Rなので、損失は力率の2乗に反比例する。
-問19。ケーブルの充電電流の式は、何。、、、答えは、2πfC×相電圧 [V]。解説、相電圧は線間/√3。
-問20。三相の充電容量の式は、何。、、、答えは、2πfC×線間電圧 [V]²。解説、Q=ωCV²。周波数と静電容量と電圧の2乗に比例。
-問21。ケーブルの誘電体損の式は、何。、、、答えは、2πfC×電圧 [V]²×tanδ。解説、誘電正接に比例する。
-問22。[%]インピーダンス法の短絡電流の式は、何。、、、答えは、定格電流 [A]×100/%Z。解説、%Zが小さいほど大きい。
-問23。短絡容量の式は、何。、、、答えは、基準容量 [MVA]×100/%Z。解説、電流と同じ形。
-問24。[%]インピーダンスの基準容量への換算式は、何。、、、答えは、変換後%Z=変換前%Z×変換後基準容量/変換前基準容量。解説、%Zは基準容量に比例する。
-問25。送電線の定態安定極限に関わる、送電電力の式は、何。、、、答えは、送電端電圧 [V]×受電端電圧 [V]/リアクタンス [Ω]×sinδ。解説、相差角90度で最大。
-問26。変圧器の並行運転で、負荷分担は何に反比例する。、、、答えは、[%]インピーダンス。解説、小さい方が多く分担する。
-
-問27。V結線の出力の式は、何。、、、答えは、√3×変圧器1台の容量 [kVA]。解説、2台合計の86.6 [%]。
-問28。V結線の利用率は、いくつ。、、、答えは、√3/2。解説、約0.866。
-
-問29。三相Y結線で中性点が接地され、平衡している場合、相電圧、つまり対地電圧の式は何。、、、答えは、V相 = V線間 / √3。解説、Y結線では線間電圧が相電圧の√3倍となる。
-問30。三相Y結線における線間電圧の式は何。、、、答えは、V線間 = √3V相。解説、Y結線の線間電圧は相電圧の√3倍。
-問31。デルタ結線の線電流の式は、何。、、、答えは、相電流 [A]×√3。解説、電流が√3倍になる。
-問32。スター結線の線電流は、相電流の、何倍。、、、答えは、1倍。解説、そのまま等しい。
-
-問33。変圧器の巻数比の式は、何。、、、答えは、一次電圧 [V]/二次電圧 [V]。解説、一次巻数 / 二次巻数と同じ。
-問34。変流器の一次電流の式は、何。、、、答えは、二次電流 [A]×変流比。解説、100対5なら20倍。
-問35。三相の有効電力の式は、何。、、、答えは、√3×線間電圧 [V]×線電流 [A]×cosθ。解説、三相の基本形。
-問36。三相の皮相電力の式は、何。、、、答えは、√3×線間電圧 [V]×線電流 [A]。解説、cosθを除く。
-問37。三相の無効電力の式は、何。、、、答えは、√3×線間電圧 [V]×線電流 [A]×sinθ。解説、sinθを乗じる。
-問38。力率改善のコンデンサ容量の式は、何。、、、答えは、有効電力 [kW]×(tanθ1−tanθ2)。解説、無効電力の差の分。
-問39。水車の比速度 Ns の式は何。、、、答えは、Ns = N√P / H^(5/4)。解説、Nは回転速度、Pは出力、Hは有効落差。
-問40。水力の理論出力は、何に比例する。、、、答えは、Q [m³/s]×H [m]に比例。解説、キューエイチに比例。
-問41。水路の流量の式は、何。、、、答えは、断面積 [m²]×流速 [m/s]。解説、連続の式。
-問42。揚水の所要時間の式は、何。、、、答えは、揚水量 [m³]/ポンプの使用水量 [m³/s]。解説、量/流量。
-問43。貯水池の発電継続時間の式は、何。、、、答えは、有効貯水量 [m³]/使用水量 [m³/s]。解説、秒で出るので時間に直す。
-問44。調整池のピーク継続時間の式は、何。、、、答えは、有効容量 [m³]/(使用水量 [m³/s]−自然流量 [m³/s])。解説、不足分を池がおぎなう。
-問45。設備利用率の式は、何。、、、答えは、期間の発電電力量 [kWh]/(定格出力 [kW]×期間の時間 [h])×100。解説、フル稼働とくらべた割合。
-問46。1 [kWh]は、何 [kJ]。、、、答えは、3600 [kJ]。解説、1 [kW]×3600 [s]。
-
-問47。1 [kWh]は、何 [kcal]。、、、答えは、860 [kcal]。解説、熱効率計算の換算値。
-
-問48。たるみを実長の差から逆算する式は、何。、、、答えは、√(3×S×実長と径間の差/8)。解説、差の式をDについて解いた形。
-
-問49。直流送電の電力の式は、何。、、、答えは、電圧 [V]×電流 [A]。解説、√3も力率も不要。
-問50。発電電力量の式は、何。、、、答えは、出力 [kW]×時間 [h]。解説、[kW]×時間で [kWh]。
-
-問51。熱消費率 H から熱効率 η を求める式は何。、、、答えは、η = 3600 / H。解説、Hの単位を [kJ/kWh]とした場合の式で、百分率は100を掛ける。
-問52。変圧器の全日効率の式は何。、、、答えは、全日効率 = 出力電力量 / (出力電力量 + 鉄損電力量 + 銅損電力量)。解説、1日など一定期間の電力量で評価する。
-問53。蓄電設備の往復効率の式は何。、、、答えは、往復効率 = 放電電力量 / 充電電力量 × 100。解説、充電時と放電時を合わせた総合効率。
-
-問54。出力1000 [MW]、発電端効率41 [%]、重油の発熱量44000 [kJ/kg]の火力発電所がある。重油消費量は、約何 [t/h]。、、、答えは、約200 [t/h]。解説、燃料消費量 = 発電出力 × 3600 / (発電端効率 × 発熱量)。1000000 × 3600 / (0.41 × 44000) / 1000 ≒ 199.6 [t/h]。
-
-問55。重油消費量200 [t/h]、重油中の炭素の重量比85 [%]で、24 [h]運転する。発生する二酸化炭素は、約何 [t]。炭素と二酸化炭素の分子量比は44 / 12とする。、、、答えは、約14960 [t]。解説、二酸化炭素量 = 燃料消費量 × 時間 × 炭素重量比 × 44 / 12。200 × 24 × 0.85 × 44 / 12 = 14960 [t]。
-
-問56。水力発電所の最大使用水量は20 [m³/s]、総落差は200 [m]、損失水頭は7 [m]、総合効率は85 [%]、年間設備利用率は60 [%]である。年間発電電力量は、約何 [GWh]。、、、答えは、約169 [GWh]。解説、有効落差H = 200 − 7 = 193 [m]。最大出力P = 9.8QHη。9.8 × 20 × 193 × 0.85 ≒ 32154 [kW]。年間発電電力量 = 32154 × 8760 × 0.6 / 10⁶ ≒ 169 [GWh]。
-
-問57。最大需要電力100 [MW]、年負荷率60 [%]の負荷がある。水力発電所の年間発電電力量を169 [GWh]とし、残りを熱効率40 [%]、燃料発熱量39100 [kJ/L]の火力発電所が供給する。年間燃料消費量は、約何 [kL]。、、、答えは、約82000 [kL]。解説、年間需要電力量は100 × 8760 × 0.6 = 525.6 [GWh]。火力発電電力量は525.6 − 169 = 356.6 [GWh]。燃料消費量 = 356.6 × 10⁶ × 3600 / (0.4 × 39100) / 1000 ≒ 82080 [kL]。
-
-問58。水車の比速度Nsが100、有効落差Hが200 [m]、水車出力Pが85000 [kW]である。水車の回転速度Nは、約何 [min⁻¹]。、、、答えは、約258 [min⁻¹]。解説、Ns = N√P / H^(5/4)。N = NsH^(5/4) / √P。100 × 200^(5/4) / √85000 ≒ 258 [min⁻¹]。
-
-問59。周波数50 [Hz]の同期発電機を、水車の回転速度258 [min⁻¹]に最も近い同期速度で運転する。磁極数は何極。、、、答えは、24極。解説、極数 = 120f / N。6000 / 258 ≒ 23.3であり、極数は偶数なので24極を選ぶ。24極の同期速度は250 [min⁻¹]。
-
-問60。容量20 [MVA]、二次電圧6.6 [kV]の三相変圧器がある。変圧器の百分率インピーダンスは10.6 [%]、電源側の百分率インピーダンスは1.1 [%]で、基準容量はともに20 [MVA]である。二次側の三相短絡電流は約何 [kA]。、、、答えは、約15.0 [kA]。解説、合成百分率インピーダンスは10.6 + 1.1 = 11.7 [%]。定格電流は20000 / (√3 × 6.6) ≒ 1750 [A]。短絡電流は1750 × 100 / 11.7 / 1000 ≒ 14.96 [kA]。
-
-問61。22 [kV]の三相系統で、変圧器の二次側換算1相インピーダンスが0.006 + j0.778 [Ω]、故障点までの線路1相インピーダンスが0.100 + j0.225 [Ω]である。故障点の三相短絡電流は、約何 [kA]。、、、答えは、約12.6 [kA]。解説、合成インピーダンスZ = 0.106 + j1.003 [Ω]。|Z| = √(0.106² + 1.003²) ≒ 1.008 [Ω]。短絡電流I = 22000 / (√3 × 1.008) / 1000 ≒ 12.6 [kA]。
-
-問62。故障点までの線路1相インピーダンスが0.100 + j0.225 [Ω]で、故障点の三相短絡電流が12.6 [kA]である。短絡中の変圧器二次側母線の線間電圧は、約何 [kV]。、、、答えは、約5.37 [kV]。解説、線路インピーダンスの大きさは√(0.100² + 0.225²) ≒ 0.246 [Ω]。母線の線間電圧は√3 × I × |Z線路|。√3 × 12.6 × 0.246 ≒ 5.37 [kV]。
-
-問63。定格容量200 [kVA]の変圧器に、有効電力120 [kW]、力率0.6の負荷が接続されている。同じ力率0.6の負荷を増設し、コンデンサによって全体の力率を0.8に改善する。増設できる負荷の皮相電力は、最大約何 [kVA]。、、、答えは、約66.7 [kVA]。解説、改善後に供給できる有効電力は200 × 0.8 = 160 [kW]。増設できる有効電力は160 − 120 = 40 [kW]。増設負荷の皮相電力は40 / 0.6 ≒ 66.7 [kVA]。
-
-問64。定格容量100 [kVA]、鉄損1 [kW]、全負荷銅損2 [kW]の変圧器がある。力率1、出力50 [kW]で8 [h]運転し、残りの16 [h]は無負荷で通電した。全日効率は、約何 [%]。、、、答えは、約93.5 [%]。解説、出力電力量は50 × 8 = 400 [kWh]。鉄損電力量は1 × 24 = 24 [kWh]。銅損は負荷率の2乗に比例し、2 × 0.5² × 8 = 4 [kWh]。全日効率は400 / (400 + 24 + 4) × 100 ≒ 93.5 [%]。
-
-問65。径間100 [m]の架空電線で、導体温度30 [℃]のとき、たるみは2 [m]であった。導体温度が60 [℃]になったときのたるみは、約何 [m]。線膨張係数を1.5 × 10⁻⁵ [1/℃]とし、張力による伸びは無視する。、、、答えは、約2.39 [m]。解説、30 [℃]での実長はL1 = 100 + 8 × 2² / (3 × 100) ≒ 100.1067 [m]。60 [℃]での実長はL2 = L1 × (1 + 1.5 × 10⁻⁵ × 30) ≒ 100.1517 [m]。たるみD = √(3 × 100 × (L2 − 100) / 8) ≒ 2.39 [m]。
-
-問66。河川流量が1日を通して8 [m³/s]である。河川の全流量を調整池に取り込み、発電所を1日6 [h]だけ運転する。1日の流入水量をすべて使用するとき、運転中の使用流量は何 [m³/s]。、、、答えは、32 [m³/s]。解説、水量収支は8 × 24 = Q × 6。Q = 8 × 24 / 6 = 32 [m³/s]。
-
-問67。河川流量8 [m³/s]の水を、発電停止中の18 [h]にすべて調整池へ貯水する。必要な有効貯水容量は、何 [m³]。、、、答えは、518400 [m³]。解説、貯水量 = 流量 × 時間。8 × 18 × 3600 = 518400 [m³]。
-
-以上、67問。おつかれさまでした。`},
-];
-
-
-
-// ---------- 読み上げ変換表 v6（単位・数式・誤読対策） ----------
-// 表示は変えず、読み上げ直前にだけ左→右へ置換する。
-// フォーマット: 1行1件「対象→カタカナ読み」。#で始まる行はコメント。
-// 行頭に「re:」を付けると左側を正規表現として扱う。上の行から順に適用。
-const DEFAULT_YOMI = `# 内蔵の読み上げ変換表 v6
-# 上から順に適用。複合単位を単独単位より先に置く。
-
-# 誤読しやすい専門用語
-歩道橋→ホドウキョウ
-受風→ジュフウ
-相電圧→ソウデンアツ
-風のエネルギー→カゼノエネルギー
-供給力→キョウキュウリョク
-水車→スイシャ
-煙道→エンドウ
-冷却水→レイキャクスイ
-蓄電所→チクデンショ
-仕上り→シアガリ
-外径→ガイケイ
-市街地外→シガイチガイ
-re:([ABCD])種→$1シュ
-離隔→リカク
-造営材→ゾウエイザイ
-造営物→ゾウエイブツ
-径間→ケイカン
-弱電流→ジャクデンリュウ
-引込→ヒキコミ
-併架→ヘイガ
-共架→キョウガ
-混触→コンショク
-1線地絡→イッセンチラク
-地絡→チラク
-零相→レイソウ
-調相→チョウソウ
-解列→カイレツ
-逆潮流→ギャクチョウリュウ
-揚程→ヨウテイ
-昇塔→ショウトウ
-足場金具→アシバカナグ
-接地極→セッチキョク
-暗きょ→アンキョ
-管路→カンロ
-断路器→ダンロキ
-木柱→モクチュウ
-鉄柱→テッチュウ
-コンクリート柱→コンクリートチュウ
-低高圧→テイコウアツ
-小勢力→ショウセイリョク
-小出力発電設備→ショウシュツリョクハツデンセツビ
-小規模事業用電気工作物→ショウキボジギョウヨウデンキコウサクブツ
-電線路維持運用者→デンセンロイジウンヨウシャ
-使用前自己確認→シヨウマエジコカクニン
-内燃力→ナイネンリョク
-高感度形→コウカンドガタ
-高速形→コウソクガタ
-浴器→ヨッキ
-水気→ミズケ
-床上→ユカウエ
-上方→ジョウホウ
-下方→カホウ
-側方→ソクホウ
-下面→カメン
-である旨→であるムネ
-施す→ホドコス
-ちょう架→チョウカ
-がいし引き→ガイシビキ
-弛度→シド
-実長→ジッチョウ
-水撃→スイゲキ
-節炭器→セッタンキ
-貫流→カンリュウ
-復水器→フクスイキ
-過熱器→カネツキ
-抽気→チュウキ
-軽水→ケイスイ
-濃縮→ノウシュク
-多導体→タドウタイ
-素線→ソセン
-塔脚→トウキャク
-樹枝状→ジュシジョウ
-両外線→リョウガイセン
-逆比→ギャクヒ
-壊食→カイショク
-電気工作物→デンキコウサクブツ
-工作物→コウサクブツ
-送配電→ソウハイデン
-支持物→シジブツ
-建造物→ケンゾウブツ
-外箱→ソトバコ
-避雷器→ヒライキ
-制御所→セイギョジョ
-差動リレー→サドウリレー
-距離リレー→キョリリレー
-負荷持続曲線→フカジゾクキョクセン
-部分放電→ブブンホウデン
-絶縁協調→ゼツエンキョウチョウ
-短絡容量→タンラクリョウリョウ
-定格遮断容量→テイカクシャダンリョウリョウ
-供給予備率→キョウキュウヨビリツ
-全日効率→ゼンニチコウリツ
-何?→ナニ?
-何。→ナニ。
-耐力→タイリョク
-同一→ドウイツ
-1日→イチニチ
-力率→リキリツ
-皮相電力→ヒソウデンリョク
-結線→ケッセン
-抵抗値→テイコウチ
-何年間→ナンネンカン
-何年→ナンネン
-毎年度→マイネンド
-水平→スイヘイ
-水頭→スイトウ
-re:([0-9]+)日間→$1ニチカン
-re:([0-9]+)乗→$1ジョウ
-re:(^|[^0-9])110(?=$|[^0-9])→$1ヒャクジュウ
-
-# 複合単位
-[kN/mm²]→キロニュートン毎平方ミリメートル
-[kJ/kWh]→キロジュール毎キロワットアワー
-[kJ/L]→キロジュール毎リットル
-[t/h]→トン毎時
-[1/℃]→毎度シー
-[kg/m³]→キログラム毎立方メートル
-[kJ/kg]→キロジュール毎キログラム
-[kW/m²]→キロワット毎平方メートル
-[N/m]→ニュートン毎メートル
-[m³/s]→立方メートル毎秒
-[kg/h]→キログラム毎時
-[m/s]→メートル毎秒
-
-# 電力・電圧・電流・エネルギー
-[GWh]→ギガワットアワー
-[MWh]→メガワットアワー
-[kWh]→キロワットアワー
-[MVA]→メガボルトアンペア
-[kVA]→キロボルトアンペア
-[kvar]→キロバール
-[VA]→ボルトアンペア
-[MW]→メガワット
-[kL]→キロリットル
-[kW]→キロワット
-[kV]→キロボルト
-[kA]→キロアンペア
-[mA]→ミリアンペア
-[kJ]→キロジュール
-[J]→ジュール
-[kcal]→キロカロリー
-[Wh]→ワットアワー
-[W]→ワット
-[V]→ボルト
-[A]→アンペア
-
-# 長さ・力・抵抗・時間など
-[m³]→立方メートル
-[mm²]→平方ミリメートル
-[m²]→平方メートル
-[MΩ]→メガオーム
-[kΩ]→キロオーム
-[Ω]→オーム
-[kN]→キロニュートン
-[N]→ニュートン
-[km]→キロメートル
-[cm]→センチメートル
-[mm]→ミリメートル
-[m]→メートル
-[kg]→キログラム
-[t]→トン
-[℃]→度シー
-[Pa]→パスカル
-[μF]→マイクロファラド
-[μs]→マイクロ秒
-[min⁻¹]→毎分
-[min]→分
-[h]→時間
-[s]→秒
-[Hz]→ヘルツ
-[%]→パーセント
-
-# 変数・ギリシャ文字・関数
-P_loss→ピーロス
-Pin→ピーイン
-Psc→ピーエスシー
-Ssc→エスエスシー
-V線間→ブイセンカン
-V相→ブイソウ
-VD→ブイディー
-RB→アールビー
-RD→アールディー
-I1→アイワン
-Ic→アイシー
-Ig→アイジー
-V'→ブイダッシュ
-L'→エルダッシュ
-IM→アイエム
-IH→アイエイチ
-Ns→エヌエス
-L1→エルワン
-L2→エルツー
-|Z線路|→ゼットセンロの大きさ
-|Z|→ゼットの大きさ
-%Z→パーセントインピーダンス
-cos45°→コサイン45ド
-cosθ→コサインシータ
-sinθ→サインシータ
-tanθ→タンジェントシータ
-sinδ→サインデルタ
-tanδ→タンジェントデルタ
-θ→シータ
-η→イータ
-ρ→ロー
-α→アルファ
-π→パイ
-ω→オメガ
-δ→デルタ
-°→ド
-⁻⁶→ノマイナス6ジョウ
-⁻⁵→ノマイナス5ジョウ
-10⁶→ジュウノロクジョウ
-
-# 数式記号。複合記号を先に変換する。
-3I²R→3、かける、アイの2乗、かける、アール
-I²R→アイの2乗、かける、アール
-N√P→エヌ、かける、ルートピー
-√3VI→ルート3、かける、ブイ、かける、アイ
-VI→ブイ、かける、アイ
-re:(^|[^A-Za-z0-9_])I(?=$|[^A-Za-z0-9_])→$1アイ
-re:(^|[^A-Za-z0-9_])V(?=$|[^A-Za-z0-9_])→$1ブイ
-re:(^|[^A-Za-z0-9_])R(?=$|[^A-Za-z0-9_])→$1アール
-re:(^|[^A-Za-z0-9_])P(?=$|[^A-Za-z0-9_])→$1ピー
-re:(^|[^A-Za-z0-9_])Q(?=$|[^A-Za-z0-9_])→$1キュー
-re:(^|[^A-Za-z0-9_])H(?=$|[^A-Za-z0-9_])→$1エイチ
-re:(^|[^A-Za-z0-9_])T(?=$|[^A-Za-z0-9_])→$1ティー
-re:(^|[^A-Za-z0-9_])E(?=$|[^A-Za-z0-9_])→$1イー
-re:(^|[^A-Za-z0-9_])C(?=$|[^A-Za-z0-9_])→$1シー
-re:(^|[^A-Za-z0-9_])N(?=$|[^A-Za-z0-9_])→$1エヌ
-re:(^|[^A-Za-z0-9_])S(?=$|[^A-Za-z0-9_])→$1エス
-re:(^|[^A-Za-z0-9_])Z(?=$|[^A-Za-z0-9_])→$1ゼット
-re:(^|[^A-Za-z0-9_])D(?=$|[^A-Za-z0-9_])→$1ディー
-re:(^|[^A-Za-z0-9_])j(?=[0-9])→$1ジェイ
-re:(^|[^A-Za-z0-9_])A(?=$|[^A-Za-z0-9_])→$1エー
-re:(^|[^A-Za-z0-9_])W(?=$|[^A-Za-z0-9_])→$1ダブリュー
-re:(^|[^A-Za-z0-9_])f(?=$|[^A-Za-z0-9_])→$1エフ
-re:(^|[^A-Za-z0-9_])v(?=$|[^A-Za-z0-9_])→$1ブイ
-re:(^|[^A-Za-z0-9_])t(?=$|[^A-Za-z0-9_])→$1ティー
-re:(^|[^A-Za-z0-9_])n(?=$|[^A-Za-z0-9_])→$1エヌ
-re:(^|[^A-Za-z0-9_])L(?=$|[^A-Za-z0-9_])→$1エル
-√3→ルート3
-√(→、ルートの中で、カッコ、
-√→ルート
-²→ニジョウ
-³→の3乗
-^(5/4)→の4分の5乗
-^→の
-×→、かける、
-÷→、わる、
-/→、わる、
-±→、プラスマイナス、
-+→、たす、
-−→、ひく、
--→、ひく、
-≒→、およそ、
-=→、イコール、
-(→、カッコ、
-)→、カッコとじ、
-`;
-
-function parseYomiTable(text){
-  const rules = [];
-  for(const raw of text.split(/\r?\n/)){
-    const line = raw.trim();
-    if(!line || line.startsWith("#")) continue;
-    const parts = line.split(/→|->/);
-    if(parts.length < 2) continue;
-    const pat = parts[0].trim();
-    const to = parts.slice(1).join("").trim();
-    if(!pat) continue;
-    if(pat.startsWith("re:")){
-      try{ rules.push({re: new RegExp(pat.slice(3), "g"), to: to}); }catch(e){}
-    }else{
-      const escaped = pat.replace(/[.*+?^\${}()|[\]\\]/g, "\\$&");
-      rules.push({re: new RegExp(escaped, "g"), to: to});
-    }
-  }
-  return rules;
-}
-let yomiRules = parseYomiTable(DEFAULT_YOMI);
-function applyYomi(t){
-  let s = t;
-  for(const r of yomiRules) s = s.replace(r.re, r.to);
-  // 記号変換で生じた読点の重なりを整理
-  s = s.replace(/(?:、\s*)+/g, "、")
-       .replace(/\s*、\s*/g, "、")
-       .replace(/、([。??])/g, "$1")
-       .replace(/^、/, "")
-       .trim();
-  return s;
-}
-
-// ---------- 状態 ----------
-let DATA = [];
-let order = [];
-let pos = 0;
-let playing = false;   // 再生セッション中か
-let paused = false;    // 一時停止中か
-let phase = "";        // いまのフェーズ: question / think / answer
-let skipRequested = false; // 問題・考える間からの再開時に答えへ飛ぶ合図
-let session = 0;       // 再生セッション番号(巻き戻し等で残った古いループを無効化する)
-let phaseLabel = "";   // 現在のフェーズ表示
-let pauseSec = 1, rate = 2.0;  // デフォルト:考える間1秒・超高速
-let timers = [];
-let wakeLock = null;
-let learned = new Set(); // 覚えた問題(DATA内index)。セッション中のみ
-let yabai = new Set();   // ヤバイ!問題(DATA内index)。ローカルストレージに保存
-let dsKey = "";          // 保存キー(セット名)
-const YABAI_LS = "kikinagashi_yabai_v1";
-let lsOK = false;        // ローカルストレージが使えるか
-try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); lsOK = true; }catch(e){}
-function loadYabaiStore(){ try{ return JSON.parse(localStorage.getItem(YABAI_LS) || "{}"); }catch(e){ return {}; } }
-function itemStorageKey(d){ return d.c + "::" + d.num; }
-function loadYabai(){
-  yabai = new Set();
-  if(!lsOK || !dsKey) return;
-  const saved = loadYabaiStore()[dsKey] || [];
-  DATA.forEach(function(d,i){
-    // 旧版の数値保存にも互換対応しつつ、全問題モードでは分野名込みで識別する。
-    if(saved.indexOf(itemStorageKey(d)) >= 0 || saved.indexOf(d.num) >= 0) yabai.add(i);
-  });
-}
-function saveYabai(){
-  if(!lsOK || !dsKey) return;
-  try{
-    const store = loadYabaiStore();
-    store[dsKey] = Array.from(yabai).map(function(i){ return itemStorageKey(DATA[i]); });
-    localStorage.setItem(YABAI_LS, JSON.stringify(store));
-  }catch(e){}
-}
-const $ = id => document.getElementById(id);
-
-// ---------- 出題範囲 ----------
-function rebuildRangeSel(){
-  const cats = [...new Set(DATA.map(d=>d.c))];
-  const subjects = [...new Set(cats.map(c=>c.split("・")[0]))];
-  const sel = $("rangeSel");
-  let html = `<option value="ALL">すべて(${DATA.length}問)</option>`;
-  if(subjects.length > 1){
-    html += subjects.map(s=>{
-      const n = DATA.filter(d=>d.c===s || d.c.startsWith(s + "・")).length;
-      return `<option value="SUBJ:${s}">${s}・全分野(${n}問)</option>`;
-    }).join("");
-  }
-  if(cats.length > 1){
-    html += cats.map(c=>{
-      const n=DATA.filter(d=>d.c===c).length;
-      return `<option value="${c}">${c}(${n}問)</option>`;
-    }).join("");
-  }
-  sel.innerHTML = html;
-}
-
-function isInSelectedRange(item, value){
-  if(value === "ALL") return true;
-  if(value.startsWith("SUBJ:")){
-    const s = value.slice(5);
-    return item.c === s || item.c.startsWith(s + "・");
-  }
-  return item.c === value;
-}
-
-function buildOrder(){
-  const v = $("rangeSel").value || "ALL";
-  const yOnly = $("yabaiOnlyChk") && $("yabaiOnlyChk").checked;
-  order = DATA.map((_,i)=>i).filter(i =>
-    isInSelectedRange(DATA[i], v) && !learned.has(i)
-    && (!yOnly || yabai.has(i)));
-  // 全問題モードではDATAに全セットが入るため、ここで全611問がシャッフル対象になる。
-  if($("shuffleChk").checked){
-    for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
-  }
-  pos = 0;
-}
-
-// ---------- 音声 ----------
-let jaVoice = null;
-function pickVoice(){
-  const vs = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.startsWith("ja"));
-  jaVoice = vs.find(v=>/Kyoko|O-?ren|Google.*日本語|Haruka|Ayumi/i.test(v.name)) || vs[0] || null;
-}
-speechSynthesis.onvoiceschanged = pickVoice; pickVoice();
-
-let utterActive = false;   // 発話が未完了のチャンクがあるか
-let retryFlag = false;     // 無音で固まったとき、現在の文をやり直す合図
-
-function splitSentences(text){
-  return text.split("。").map(s=>s.trim()).filter(s=>s)
-    .map(s => /[??!!]$/.test(s) ? s : s + "。");
-}
-
-// 1文だけ読む。固まった場合は "retry" を返す
-function speakOne(text){
-  return new Promise(res=>{
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "ja-JP"; u.rate = rate; u.pitch = 1;
-    if(jaVoice) u.voice = jaVoice;
-    utterActive = true;
-    // 保険:読み上げが想定時間の数倍かかったら固まったとみなす(一時停止中は時間を進めない)
-    const limit = text.length * 300 / rate + 4000;
-    let elapsed = 0;
-    const tick = setInterval(()=>{
-      if(!paused) elapsed += 250;
-      if(elapsed > limit){ retryFlag = true; try{speechSynthesis.cancel();}catch(e){} }
-    }, 250);
-    const done = ()=>{
-      clearInterval(tick);
-      utterActive = false;
-      if(retryFlag){ retryFlag = false; res("retry"); }
-      else res(true);
+(() => {
+  // ---------- 設定 ----------
+  const PAST_FRAMES = 13;      // 過去1時間分（5分間隔）
+  const FRAME_MS = 600;        // アニメーション速度
+  const JMA_BASE = "https://www.jma.go.jp/bosai/jmatile/data/nowc/";
+
+  // 色は気象庁「ホームページにおける気象情報の配色に関する設定指針」に基づく
+  // 項目は [日本語, English, 色] / items are [Japanese, English, color]
+  const LEGENDS = {
+    rain: { unit: { ja: "mm/h", en: "mm/h" }, items: [
+      ["80以上", "80 or more", "#b40068"], ["50〜80", "50–80", "#ff2800"], ["30〜50", "30–50", "#ff9900"],
+      ["20〜30", "20–30", "#faf500"], ["10〜20", "10–20", "#0041ff"], ["5〜10", "5–10", "#218cff"],
+      ["1〜5", "1–5", "#a0d2ff"], ["1未満", "under 1", "#f2f2ff"]] },
+    temp: { unit: { ja: "℃", en: "°C" }, items: [
+      ["35〜", "35 or more", "#b40068"], ["30〜35", "30–35", "#ff2800"], ["25〜30", "25–30", "#ff9900"],
+      ["20〜24", "20–24", "#faf500"], ["15〜19", "15–19", "#ffff96"], ["10〜14", "10–14", "#fffff0"],
+      ["5〜9", "5–9", "#b9ebff"], ["0〜4", "0–4", "#0096ff"], ["-5〜-1", "-5 to -1", "#0041ff"],
+      ["〜-5", "-5 or less", "#002080"]] },
+    thunder: { unit: { ja: "雷活動度", en: "Lightning activity" }, items: [
+      ["活動度4", "Level 4", "#c800ff"], ["活動度3", "Level 3", "#ff2800"],
+      ["活動度2", "Level 2", "#ffaa00"], ["活動度1", "Level 1", "#faf500"]] },
+    tornado: { unit: { ja: "竜巻発生確度", en: "Tornado likelihood" }, approx: true, items: [
+      ["発生確度2", "Level 2", "#ff2800"], ["発生確度1", "Level 1", "#faf500"]] },
+    weather: { unit: { ja: "天気", en: "Weather" }, items: [
+      ["晴", "Clear", "#ffaa00"], ["曇", "Cloudy", "#aaaaaa"],
+      ["雨", "Rain", "#0041ff"], ["雪", "Snow", "#f2f2ff"]] },
+    risk: { unit: { ja: "危険度", en: "Risk level" }, approx: true, items: [
+      ["災害切迫", "Emergency", "#0c0c0c"], ["危険", "Danger", "#a50021"],
+      ["警戒", "Warning", "#ff2800"], ["注意", "Caution", "#f2e700"]] },
+    rain3h: { unit: { ja: "mm/3時間", en: "mm / 3 hours" }, approx: true, items: [
+      ["20以上", "20 or more", "#ff2800"], ["15〜19", "15–19", "#ff9900"], ["10〜14", "10–14", "#faf500"],
+      ["5〜9", "5–9", "#218cff"], ["1〜4", "1–4", "#a0d2ff"]] },
+    snow3h: { unit: { ja: "cm/3時間", en: "cm / 3 hours" }, approx: true, items: [
+      ["6以上", "6 or more", "#ff2800"], ["3〜5", "3–5", "#faf500"], ["1〜2", "1–2", "#a0d2ff"]] }
+  };
+
+  // ---------- 日英の文言 / bilingual strings (Art. 1, Art. 8-6) ----------
+  const TEXT = {
+    loading:   { ja: "読み込み中", en: "Loading" },
+    observed:  { ja: "実況", en: "Observed" },
+    forecast:  { ja: "予報", en: "Forecast" },
+    play:      { ja: "再生", en: "Play" },
+    pause:     { ja: "停止", en: "Pause" },
+    collapse:  { ja: "パネルをたたむ", en: "Collapse panel" },
+    expand:    { ja: "パネルを広げる", en: "Expand panel" },
+    updated:   { ja: "更新", en: "Updated" },
+    next:      { ja: "次回", en: "Next" },
+    dataIs:    { ja: "データ：", en: "Data: " },
+    legendLink:{ ja: "凡例（気象庁）", en: "Legend (JMA)" },
+    approx:    { ja: "（目安）", en: " (approximate)" },
+    failLoad:  { ja: "取得できませんでした。通信状況を確認してください（次回自動で再試行します）",
+                 en: "Could not load the data. Check the connection; the next refresh will retry." },
+    tileFail:  { ja: n => `雨雲画像 ${n}枚が取得できませんでした（自動で再試行します）`,
+                 en: n => `${n} image tiles did not load. They will be retried automatically.` },
+    noGeo:     { ja: "このブラウザは位置情報に対応していません", en: "This browser does not provide location." },
+    hereLabel: { ja: "現在地", en: "You are here" },
+    geoAcc:    { ja: m => `現在地 誤差±${m}m`, en: m => `Position, accuracy ±${m} m` },
+    geoWait:   { ja: "現在地を測定しています", en: "Getting your position…" },
+    geoDenied: { ja: "位置情報が許可されていません。ブラウザの許可設定を確認してください",
+                 en: "Location is not allowed. Check the browser's permission setting." },
+    geoFail:   { ja: "位置情報を取得できませんでした。ブラウザの許可設定を確認してください",
+                 en: "Could not get your location. Check the browser's permission setting." },
+    obsTip:    { ja: "実況", en: "observed" },
+    isoLabel:  { ja: "等圧線", en: "Isobars" },
+    isoEvery:  { ja: "4hPaごと", en: "every 4 hPa" },
+    isoThick:  { ja: "太線は20hPaごと", en: "thick line every 20 hPa" },
+    isoSrc:    { ja: "海面気圧：Open-Meteo（数値予報）", en: "Sea-level pressure: Open-Meteo (model)" },
+    isoFail:   { ja: "等圧線のデータを取得できませんでした", en: "Could not load the isobar data." },
+    high:      { ja: "高", en: "H" },
+    low:       { ja: "低", en: "L" },
+    chartNone: { ja: "天気図を取得できませんでした", en: "Could not load the weather chart." },
+    chartNow:  { ja: d => `${d} 実況`, en: d => `Analysis ${d}` },
+    chartFt:   { ja: (d, h) => `${d} の予想（${h}時間後）`, en: (d, h) => `Forecast for ${d} (+${h}h)` },
+    chartAlt:  { ja: (a, c) => `天気図（${a}、${c}）`, en: (a, c) => `Weather chart (${a}, ${c})` },
+    areaNear:  { ja: "日本周辺", en: "around Japan" },
+    areaAsia:  { ja: "アジア", en: "Asia" },
+    fcTip:     { ja: "予報", en: "forecast" }
+  };
+  let lang = "ja";
+  const T = key => { const v = TEXT[key]; return v[lang]; };
+
+  // ---------- 地図 ----------
+  const map = L.map("map", { zoomControl: true, minZoom: 4, maxZoom: 13 })
+    .setView([35.68, 139.77], 8);
+
+  L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
+    attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
+    maxZoom: 18
+  }).addTo(map);
+
+  // ---------- 状態 ----------
+  let frames = [];      // {label: Date, future: bool, layer}
+  let current = 0;
+  let playing = false;
+  let follow = true;    // 現在時刻（最新の実況）で止めて自動で追従する
+  let playTimer = null;
+  let refreshTimer = null;
+  let countdownTimer = null;
+  let nextRefreshAt = 0;
+  let opacity = 0.75;
+
+  const $ = id => document.getElementById(id);
+  const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+  const locale = () => (lang === "ja" ? "ja-JP" : "en-GB");
+  const fmt = d => d.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
+  const fmtDate = d => d.toLocaleString(locale(), { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
+
+  // "20260921053000"(UTC) → Date
+  const parseJmaTime = s => new Date(Date.UTC(
+    +s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8), +s.slice(8, 10), +s.slice(10, 12)
+  ));
+
+  // ---------- 気象庁の各データの場所 ----------
+  // 画像は偶数ズームにしか中身が入っていないため、使うズームは偶数に絞っている
+  const JMA = "https://www.jma.go.jp/bosai/";
+  const NOWC = { dir: "jmatile/data/nowc", times: ["targetTimes_N3.json"], zooms: [4, 6, 8, 10] };
+  const RASRF = { dir: "jmatile/data/rasrf", times: ["targetTimes.json"], zooms: [4, 6, 8, 10] };
+  const WDIST = { dir: "jmatile/data/wdist", times: ["targetTimes.json"], zooms: [4, 6, 8, 10] };
+  const SNOW = { dir: "jmatile/data/snow", times: ["targetTimes.json"], zooms: [4, 6, 8, 10] };
+  const RISK = { dir: "jmatile/data/risk", times: ["targetTimes.json"], zooms: [4, 6, 8, 10] };
+  const SAT = { dir: "himawari/data/satimg", times: ["targetTimes_jp.json"], zooms: [4, 6], member: "jp", ext: "jpg" };
+
+  const LAYERS = {
+    raincloud: { ...NOWC, name: "雨雲の動き", en: "Rain (high-resolution nowcast)", path: "surf/hrpns", element: "hrpns",
+                 times: ["targetTimes_N1.json", "targetTimes_N2.json"], legend: "rain", page: "nowc" },
+    thunder:   { ...NOWC, name: "雷活動度", en: "Lightning activity", path: "surf/thns", element: "thns", zooms: [4, 6, 8], legend: "thunder", page: "nowc" },
+    tornado:   { ...NOWC, name: "竜巻発生確度", en: "Tornado likelihood", path: "surf/trns", element: "trns", legend: "tornado", page: "nowc" },
+
+    "sat-ir":        { ...SAT, name: "ひまわり 赤外画像", en: "Himawari infrared", path: "B13/TBB", page: "himawari" },
+    "sat-vis":       { ...SAT, name: "ひまわり 可視画像", en: "Himawari visible", path: "B03/ALBD", page: "himawari" },
+    "sat-truecolor": { ...SAT, name: "ひまわり トゥルーカラー", en: "Himawari true color", path: "REP/ETC", page: "himawari" },
+
+    rain1h:  { ...RASRF, name: "今後の雨 1時間降水量", en: "Rainfall forecast, 1 hour", path: "surf/rasrf", element: "rasrf", legend: "rain", page: "rasrf" },
+    rain3h:  { ...RASRF, name: "今後の雨 3時間降水量", en: "Rainfall forecast, 3 hours", path: "surf/rasrf03h", element: "rasrf03h", page: "rasrf" },
+    rain24h: { ...RASRF, name: "今後の雨 24時間降水量", en: "Rainfall forecast, 24 hours", path: "surf/rasrf24h", element: "rasrf24h", page: "rasrf" },
+
+    weather:    { ...WDIST, name: "天気予報分布 天気", en: "Distribution forecast, weather", path: "surf/wm", element: "wm", legend: "weather", page: "wdist" },
+    temp:       { ...WDIST, name: "天気予報分布 気温", en: "Distribution forecast, temperature", path: "surf/temp", element: "temp", legend: "temp", page: "wdist" },
+    r3:         { ...WDIST, name: "天気予報分布 3時間降水量", en: "Distribution forecast, rainfall 3 hours", path: "surf/r3", element: "r3", legend: "rain3h", page: "wdist" },
+    s3:         { ...WDIST, name: "天気予報分布 3時間降雪量", en: "Distribution forecast, snowfall 3 hours", path: "surf/s3", element: "s3", legend: "snow3h", page: "wdist" },
+    "max-temp": { ...WDIST, name: "天気予報分布 日中の最高気温", en: "Distribution forecast, daytime high", path: "surf/max_temp", element: "max_temp", legend: "temp", page: "wdist" },
+    "min-temp": { ...WDIST, name: "天気予報分布 朝の最低気温", en: "Distribution forecast, morning low", path: "surf/min_temp", element: "min_temp", legend: "temp", page: "wdist" },
+
+    snowd:   { ...SNOW, name: "積雪の深さ", en: "Snow depth", path: "surf/snowd", page: "snow" },
+    snow24h: { ...SNOW, name: "24時間降雪量", en: "Snowfall, 24 hours", path: "surf/snowf24h", page: "snow" },
+
+    land:  { ...RISK, name: "キキクル 土砂災害", en: "Kikikuru, landslide risk", path: "surf/land", legend: "risk", page: "risk" },
+    inund: { ...RISK, name: "キキクル 浸水害", en: "Kikikuru, inundation risk", path: "surf/inund", legend: "risk", page: "risk" }
+  };
+
+  // ---------- データ取得：気象庁 ----------
+  async function loadJma(key) {
+    const L2 = LAYERS[key];
+    const bust = "?_=" + Date.now();
+    const lists = await Promise.all(L2.times.map((f, i) =>
+      fetch(`${JMA}${L2.dir}/${f}${bust}`)
+        .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .catch(e => { if (i === 0) throw e; return []; })   // 1つ目は必須、2つ目以降は無くても続行
+    ));
+
+    const seen = new Set();
+    const list = [].concat(...lists)
+      .filter(t => t.validtime && (!L2.element || t.elements?.includes(L2.element)))
+      .filter(t => { const k = t.basetime + t.validtime; if (seen.has(k)) return false; seen.add(k); return true; })
+      .map(t => ({ ...t, future: t.validtime > t.basetime }))
+      .sort((a, b) => a.validtime.localeCompare(b.validtime) || a.basetime.localeCompare(b.basetime));
+
+    const past = list.filter(t => !t.future).slice(-PAST_FRAMES);
+    const future = list.filter(t => t.future).slice(0, PAST_FRAMES);
+    if (!past.length && !future.length) throw new Error("時刻一覧が空です");
+
+    const member = L2.member || "none";
+    const ext = L2.ext || "png";
+    return {
+      source: "気象庁 " + L2.name,
+      sourceEn: "Japan Meteorological Agency — " + L2.en,
+      layerName: L2.name,
+      layerNameEn: L2.en,
+      attribution: `<a href="https://www.jma.go.jp/bosai/${L2.page}/" target="_blank">気象庁</a>`,
+      legend: LEGENDS[L2.legend] || null,
+      legendLink: `https://www.jma.go.jp/bosai/${L2.page}/`,
+      list: [...past, ...future].map(t => ({
+        time: parseJmaTime(t.validtime),
+        future: t.future,
+        url: `${JMA}${L2.dir}/${t.basetime}/${member}/${t.validtime}/${L2.path}/{z}/{x}/{y}.${ext}`
+      })),
+      zooms: L2.zooms
     };
-    u.onend = done; u.onerror = done;
-    speechSynthesis.speak(u);
+  }
+
+  // ---------- データ取得：RainViewer（予備） ----------
+  async function loadRainViewer() {
+    const r = await fetch("https://api.rainviewer.com/public/weather-maps.json?_=" + Date.now());
+    if (!r.ok) throw new Error("RainViewer " + r.status);
+    const j = await r.json();
+    const past = (j.radar?.past || []).map(f => ({ ...f, future: false }));
+    const now = (j.radar?.nowcast || []).map(f => ({ ...f, future: true }));
+    if (!past.length) throw new Error("RainViewerデータが空です");
+    return {
+      source: 'RainViewer（予備）',
+      sourceEn: 'RainViewer (fallback)',
+      layerName: '雨雲の動き（RainViewer）',
+      layerNameEn: 'Rain (RainViewer fallback)',
+      attribution: '<a href="https://www.rainviewer.com/" target="_blank">RainViewer</a>',
+      legend: LEGENDS.rain,
+      list: [...past, ...now].map(f => ({
+        time: new Date(f.time * 1000),
+        future: f.future,
+        url: `${j.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`
+      })),
+      zooms: range(1, 7)
+    };
+  }
+
+  // ---------- 画像読み込み（キャッシュ付き） ----------
+  const imgCache = new Map();
+  let tileErrors = 0, tileOk = 0;
+
+
+  function updateTileStatus() {
+    // 範囲外の海域などは元から画像が無いことがあるため、失敗が目立つときだけ表示
+    $("tileerr").textContent = tileErrors > 3 && tileErrors > tileOk * 0.3 ? TEXT.tileFail[lang](tileErrors) : "";
+  }
+  // 失敗したら間隔をあけて最大3回まで再試行
+  function tryLoad(src, attempt = 0) {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => {
+        if (attempt >= 3) { rej(new Error("tile")); return; }
+        setTimeout(() => tryLoad(src, attempt + 1).then(res, rej), 1500 * (attempt + 1));
+      };
+      img.src = attempt ? src + (src.includes("?") ? "&" : "?") + "r=" + attempt : src;
+    });
+  }
+  function loadImg(src) {
+    if (imgCache.has(src)) return imgCache.get(src);
+    const p = tryLoad(src).then(img => { tileOk++; return img; }).catch(e => {
+      imgCache.delete(src);
+      tileErrors++; updateTileStatus();
+      throw e;
+    });
+    imgCache.set(src, p);
+    if (imgCache.size > 3000) imgCache.delete(imgCache.keys().next().value);
+    return p;
+  }
+
+  // ---------- どのズームでも表示できる雨雲レイヤー ----------
+  // 表示中のズームにタイルが無い場合は、近いズームのタイルを拡大・縮小して描く
+  const RadarLayer = L.GridLayer.extend({
+    initialize(url, zooms, options) {
+      this._url = url;
+      this._zooms = zooms;
+      L.GridLayer.prototype.initialize.call(this, options);
+    },
+    _src(z, x, y) {
+      return this._url.replace("{z}", z).replace("{x}", x).replace("{y}", y);
+    },
+    _nativeZoom(z) {
+      if (this._zooms.includes(z)) return z;
+      // 1段細かい画像があれば、それを縮小して使う（拡大よりきれい）
+      if (this._zooms.includes(z + 1)) return z + 1;
+      const below = this._zooms.filter(n => n <= z);
+      if (below.length) return below[below.length - 1];
+      return this._zooms[0];
+    },
+    createTile(coords, done) {
+      const size = this.getTileSize();
+      const canvas = document.createElement("canvas");
+      canvas.width = size.x; canvas.height = size.y;
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
+
+      const z = coords.z, n = this._nativeZoom(z);
+      const count = 2 ** n;
+      const wrapX = x => ((x % count) + count) % count;
+      const finish = () => done(null, canvas);
+
+      if (n <= z) {
+        // 粗いタイルの一部を切り出して拡大
+        const f = 2 ** (z - n);
+        const px = Math.floor(coords.x / f), py = Math.floor(coords.y / f);
+        if (py < 0 || py >= count) { setTimeout(finish); return canvas; }
+        const sub = 256 / f;
+        const sx = (coords.x - px * f) * sub, sy = (coords.y - py * f) * sub;
+        loadImg(this._src(n, wrapX(px), py))
+          .then(img => ctx.drawImage(img, sx, sy, sub, sub, 0, 0, size.x, size.y))
+          .catch(() => {})
+          .finally(finish);
+      } else {
+        // 細かいタイルを並べて縮小（最大4×4枚）
+        const f = 2 ** Math.min(n - z, 2);
+        const cell = size.x / f;
+        const jobs = [];
+        for (let i = 0; i < f; i++) for (let j = 0; j < f; j++) {
+          const tx = coords.x * f + i, ty = coords.y * f + j;
+          if (ty < 0 || ty >= count) continue;
+          jobs.push(loadImg(this._src(n, wrapX(tx), ty))
+            .then(img => ctx.drawImage(img, i * cell, j * cell, cell, cell))
+            .catch(() => {}));
+        }
+        Promise.all(jobs).then(finish);
+      }
+      return canvas;
+    }
   });
-}
 
-// 文単位で読み上げる。文と文の間で一時停止チェックが入るので、
-// pause非対応の端末でも「今の文の終わり」で必ず止まる
-async function speak(text, tok){
-  const chunks = splitSentences(applyYomi(text));   // 読み上げ変換表を適用(表示は変えない)
-  for(let i=0;i<chunks.length;i++){
-    if(!playing || tok !== session || skipRequested) return;
-    await waitWhilePaused(); if(!playing || tok !== session || skipRequested) return;
-    let r = await speakOne(chunks[i]);
-    if(tok !== session || skipRequested) return;
-    while(r === "retry" && playing && tok === session){
-      await rawWait(250);
-      await waitWhilePaused(); if(!playing || tok !== session || skipRequested) return;
-      r = await speakOne(chunks[i]);   // 固まった文を頭から読み直す
-    }
+  // ---------- レイヤー構築 ----------
+  let zooms = [];
+  let attribution = "";
+
+  async function buildFrames(data) {
+    const keepTime = frames[current]?.time?.getTime();
+    frames.forEach(f => f.layer && map.removeLayer(f.layer));
+
+    zooms = data.zooms;
+    tileErrors = 0; tileOk = 0; updateTileStatus();
+    attribution = data.attribution;
+
+    frames = data.list.map(f => ({ time: f.time, future: f.future, url: f.url, layer: null }));
+
+    const lastPast = Math.max(0, frames.map(f => f.future).lastIndexOf(false));
+    const same = keepTime ? frames.findIndex(f => f.time.getTime() === keepTime) : -1;
+    current = follow || same < 0 ? lastPast : same;
+
+    $("slider").max = frames.length - 1;
+    lastData = data;
+    renderSource();
+    renderLegend(data.legend, data.legendLink);
+
+    renderTrack(lastPast);
+    show(current);
   }
-}
-function rawWait(ms){return new Promise(r=>{const t=setTimeout(r,ms);timers.push(t);});}
-function clearTimers(){timers.forEach(clearTimeout);timers=[];}
-async function waitWhilePaused(){ while(playing && paused){ await rawWait(150); } }
-async function pausableWait(ms){
-  let remain = ms;
-  while(remain > 0){
-    if(!playing) return;
-    if(paused){ await rawWait(150); continue; }
-    const step = Math.min(100, remain);
-    await rawWait(step);
-    remain -= step;
-  }
-}
 
-// ---------- カウントダウンリング ----------
-const CIRC = 2*Math.PI*52;
-const ring = $("ringfg");
-ring.style.strokeDasharray = CIRC; ring.style.strokeDashoffset = CIRC;
-function setRing(f){ring.style.strokeDashoffset = CIRC*(1-f);}
-async function countdown(sec, tok){
-  const steps = Math.max(1, Math.round(sec*5));
-  for(let i=0;i<=steps;i++){
-    if(!playing || tok !== session || skipRequested) return;
-    await waitWhilePaused();          // 一時停止中はリングも凍結
-    if(!playing || tok !== session || skipRequested) return;
-    setRing(i/steps);
-    if(i<steps) await rawWait(sec*1000/steps);
-  }
-}
-
-// ---------- 表示 ----------
-function renderQ(i, hideAns){
-  const d = DATA[i];
-  $("qnum").textContent = "問 " + d.num;
-  $("qcat").textContent = d.c || "";
-  $("qtext").textContent = d.q;
-  if(hideAns){
-    // 答えは表示する瞬間まで文字を入れない(フェードアウト中に次の答えが見えるのを防ぐ)
-    $("ansval").textContent = "–";
-    $("ansmemo").textContent = "";
-    $("ansbox").classList.remove("shown");
-  }else{
-    $("ansval").textContent = d.a;
-    $("ansmemo").textContent = d.m || "";
-    $("ansbox").classList.add("shown");
-  }
-  $("learnedChk").checked = learned.has(i);
-  $("yabaiChk").checked = yabai.has(i);
-  $("progText").textContent = (order.length ? (pos+1) : 0) + " / " + order.length;
-  $("progBar").style.width = (order.length ? (pos+1)/order.length*100 : 0) + "%";
-  updateLearnedStat();
-}
-function updateLearnedStat(){
-  $("learnedStat").textContent = "覚えた:" + learned.size + "問(残り" +
-    Math.max(0, DATA.length - learned.size) + "問)";
-  $("yabaiStat").textContent = "ヤバイ:" + yabai.size + "問" + (lsOK ? "" : "(このブラウザでは保存されません)");
-}
-
-// ---------- メインループ ----------
-async function playLoop(tok){
-  // tokが最新のsessionと一致する間だけ生きているループ。
-  // 巻き戻し・スキップ等で新しいループが始まると、古いループはここで必ず終了する
-  const alive = ()=> playing && tok === session;
-  while(alive()){
-    // 覚えた問題を飛ばす
-    while(pos < order.length && learned.has(order[pos])) pos++;
-    if(pos >= order.length){
-      if($("loopChk").checked){
-        buildOrder();
-        if(order.length === 0){ stop("全問「覚えた」達成!チェック解除で再開できます"); return; }
-        continue;
-      } else { stop("おつかれさま!全問終了"); return; }
+  function layerFor(i) {
+    const f = frames[i];
+    if (!f.layer) {
+      f.layer = new RadarLayer(f.url, zooms, {
+        opacity: 0, zIndex: 10, attribution,
+        updateWhenZooming: false, keepBuffer: 1
+      });
     }
-    const idx = order[pos];
-    const d = DATA[idx];
-    setRing(0);
-    renderQ(idx, true);
-    skipRequested = false;
-    await waitWhilePaused(); if(!alive()) return;
-    phase = "question";
-    setPhase("問題を読み上げ中");
-    await speak("問い。" + d.s, tok);
-    if(!alive()) return;
-
-    if(!skipRequested){
-      await waitWhilePaused(); if(!alive()) return;
-      phase = "think";
-      setPhase("考える時間 " + pauseSec + "秒");
-      await countdown(pauseSec, tok);
-      if(!alive()) return;
-    }
-    skipRequested = false;   // ここから先は通常再生
-    await waitWhilePaused(); if(!alive()) return;
-
-    phase = "answer";
-    setRing(1);
-    // 答えの文字はこのタイミングで初めて入れる
-    $("ansval").textContent = d.a;
-    $("ansmemo").textContent = d.m || "";
-    $("ansbox").classList.add("shown");
-    setPhase("答え");
-    await speak("答えは、" + d.as + "。", tok);
-    if(!alive()) return;
-    if($("echoChk").checked){
-      await waitWhilePaused(); if(!alive()) return;
-      await speak(d.as + "。", tok);        // 復唱(答えのみ)
-      if(!alive()) return;
-    }
-    if($("kaisetsuChk").checked && d.m){
-      await waitWhilePaused(); if(!alive()) return;
-      await speak("解説。" + d.m + "。", tok);
-      if(!alive()) return;
-    }
-    // 締めの言葉は言わない。「以上」は答えの「○○以上/以下」と紛らわしいため(グランドルール)
-    await pausableWait(1200);
-    if(!alive()) return;
-    pos++;
+    return f.layer;
   }
-}
 
-function setPhase(t){
-  phaseLabel = t;
-  if(!paused) $("stageLabel").textContent = t;
-}
-function start(){
-  if(order.length===0){ $("stageLabel").textContent = "再生できる問題がありません"; return; }
-  session++;                 // 新しいセッションを開始(残っている古いループを無効化)
-  playing = true; paused = false;
-  $("playBtn").textContent = "❚❚";
-  requestWakeLock();
-  playLoop(session);
-}
-// 続きから再開できる一時停止(読み上げの途中でも止まる)
-function pauseNow(){
-  paused = true;
-  try{ speechSynthesis.pause(); }catch(e){}
-  $("playBtn").textContent = "▶";
-  $("stageLabel").textContent = "一時停止中(▶で続きから再開)";
-  if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null;}
-}
-function resumeNow(){
-  paused = false;
-  $("playBtn").textContent = "❚❚";
-  $("stageLabel").textContent = phaseLabel;
-  requestWakeLock();
+  let lastData = null;    // 言語切り替え時の再描画用 / kept for redrawing on language switch
+  let lastNowIdx = 0;
 
-  // 問題・考える時間・答えのどの段階でも、止めた位置から再開
-  try{ speechSynthesis.resume(); }catch(e){}
-  // 再開失敗(無音のまま固まる)端末への対策:
-  // しばらく監視して、再開できていなければ resume を再試行 →
-  // それでもダメなら現在の文を頭から読み直す
-  let tries = 0;
-  const check = ()=>{
-    if(!playing || paused) return;
-    if(speechSynthesis.paused){ try{ speechSynthesis.resume(); }catch(e){} }
-    if(utterActive && !speechSynthesis.speaking && !speechSynthesis.pending){
-      retryFlag = true;
-      try{ speechSynthesis.cancel(); }catch(e){}  // → speak側が文を読み直す
+  function renderTrack(nowIdx) {
+    lastNowIdx = nowIdx;
+    const track = $("track");
+    track.innerHTML = "";
+    frames.forEach((f, i) => {
+      const s = document.createElement("span");
+      s.classList.add(f.future ? "future" : "past");
+      if (i === nowIdx) s.classList.add("now");
+      const tip = f.future ? T("fcTip") : T("obsTip");
+      s.title = lang === "ja" ? `${fmt(f.time)}（${tip}）` : `${fmt(f.time)} (${tip})`;
+      s.addEventListener("click", () => { manual(i); });
+      track.appendChild(s);
+    });
+  }
+
+  let lastUpdatedAt = null;
+  function renderUpdated() {
+    $("updated").textContent = lastUpdatedAt ? T("updated") + " " + fmt(lastUpdatedAt) : "";
+  }
+
+  function renderSource() {
+    if (!lastData) return;
+    $("source").textContent = T("dataIs") + ((lang === "ja" ? lastData.source : lastData.sourceEn) || lastData.source);
+    $("layername").textContent = (lang === "ja" ? lastData.layerName : lastData.layerNameEn) || lastData.layerName;
+  }
+
+  function renderLegend(legend, link) {
+    const el = $("legend");
+    lastLegend = legend; lastLegendLink = link;
+    const iso = typeof isoLegendHtml === "function" ? isoLegendHtml() : "";
+    if (!legend) {
+      // 色の意味を確認できていないデータは、気象庁の凡例へのリンクだけ出す
+      el.style.display = link || iso ? "" : "none";
+      el.innerHTML = (link ? `<a href="${link}" target="_blank" rel="noopener">${T("legendLink")}</a>` : "") + iso;
       return;
     }
-    if(++tries < 6) setTimeout(check, 400);
-  };
-  setTimeout(check, 400);
-}
-// 完全停止(問題移動・設定変更・データ読み込み時に使用)
-function stop(label){
-  session++;                 // 停止時も古いループを即時無効化
-  playing = false; paused = false; retryFlag = false;
-  skipRequested = false; phase = "";
-  clearTimers();
-  speechSynthesis.cancel();
-  setRing(0);
-  $("playBtn").textContent = "▶";
-  $("stageLabel").textContent = label || "停止中(▶でこの問題の頭から)";
-  if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null;}
-}
-async function requestWakeLock(){
-  try{ if("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); }catch(e){}
-}
-
-// ---------- 外部テキスト読み込み ----------
-function toHalfDigits(s){return s.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
-function parseScript(text, cat){
-  const re = /^問\s*([0-9０-９]+)\s*[。．.]\s*(.+?)[、。\s]*答えは[、,、]\s*(.+?)[。]?\s*$/;
-  const items = [];
-  for(const raw of text.split(/\r?\n/)){
-    const line = raw.trim();
-    if(!line) continue;
-    const m = line.match(re);
-    if(!m) continue;
-    const num = parseInt(toHalfDigits(m[1]),10);
-    let qt = m[2].replace(/[、。]+$/,"");
-    let ansRaw = m[3].trim();
-    let kai = "";
-    const kp = ansRaw.split(/。\s*解説[、,。]\s*/);
-    if(kp.length >= 2){ ansRaw = kp[0].trim(); kai = kp.slice(1).join("").replace(/[。]+$/,"").trim(); }
-    items.push({c:(cat || "読み込みデータ"), num:num, q:qt+"?", s:qt+"。", a:ansRaw, as:ansRaw, m:kai});
+    el.style.display = "";
+    el.innerHTML = `<div class="unit">${legend.unit[lang]}${legend.approx ? T("approx") : ""}</div>` +
+      legend.items.map(i => `<div><i style="background:${i[2]}"></i>${lang === "ja" ? i[0] : i[1]}</div>`).join("") + iso;
   }
-  return items;
-}
-function loadDataset(items, name){
-  if(items.length===0){
-    $("importStatus").textContent = "読み込めませんでした。「問○。~答えは、○○。」の形式を確認してください。";
-    $("importStatus").style.color = "#9A4B00";
-    return;
-  }
-  stop();
-  DATA = items;
-  learned = new Set();
-  dsKey = name;
-  loadYabai();
-  $("dsName").textContent = name + "(" + items.length + "問)";
-  $("importStatus").style.color = "";
-  $("importStatus").textContent = items.length + "問を読み込みました。▶で再生できます。";
-  rebuildRangeSel(); buildOrder(); renderQ(order[0], true);
-}
+  let lastLegend = null, lastLegendLink = "";
 
-// 内蔵セットの読み込み
-function loadBuiltinSet(i){
-  const set = BUILTIN_SETS[i];
-  const items = parseScript(set.text, set.subj + "・" + set.name);
-  stop();
-  DATA = items;
-  learned = new Set();
-  dsKey = set.subj + "・" + set.name;
-  loadYabai();
-  $("dsName").textContent = set.subj + "・" + set.name + "(" + items.length + "問)";
-  $("importStatus").style.color = "";
-  $("importStatus").textContent = "";
-  rebuildRangeSel(); buildOrder(); renderQ(order[0], true);
-}
-
-// 全内蔵問題を法規・電力横断で1周するモード。
-function loadAllBuiltin(){
-  const items = [];
-  BUILTIN_SETS.forEach(function(set){
-    items.push(...parseScript(set.text, set.subj + "・" + set.name));
-  });
-  stop();
-  DATA = items;
-  learned = new Set();
-  dsKey = "全問題・法規＋電力";
-  loadYabai();
-  // 「1周」モードなので選択時は反復をオフにする。必要なら利用者が再度オンにできる。
-  $("loopChk").checked = false;
-  $("dsName").textContent = "全問題・法規＋電力（1周）(" + items.length + "問)";
-  $("importStatus").style.color = "";
-  $("importStatus").textContent = "全内蔵問題を読み込みました。シャッフル時も全" + items.length + "問が対象です。";
-  rebuildRangeSel(); buildOrder(); renderQ(order[0], true);
-}
-
-function loadSelectedBuiltin(){
-  const value = $("setSel").value;
-  if(value === "ALL_BUILTIN") loadAllBuiltin();
-  else loadBuiltinSet(parseInt(value, 10));
-}
-
-$("fileBtn").addEventListener("click", ()=> $("fileInput").click());
-function loadYomiTable(text, name){
-  const rules = parseYomiTable(text);
-  if(rules.length === 0){
-    $("importStatus").textContent = "変換表を読み込めませんでした。「対象→読み」の形式を確認してください。";
-    $("importStatus").style.color = "#9A4B00";
-    return;
-  }
-  yomiRules = rules;
-  $("importStatus").style.color = "";
-  $("importStatus").textContent = "読み上げ変換表「" + name + "」を読み込みました(" + rules.length + "件)。内蔵の変換表と置き換えました。";
-}
-
-$("fileInput").addEventListener("change", e=>{
-  const f = e.target.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = ()=>{
-    if(f.name.startsWith("読み上げ変換表")){
-      loadYomiTable(r.result, f.name.replace(/\.txt$/i,""));
-    }else{
-      loadDataset(parseScript(r.result), f.name.replace(/\.txt$/i,""));
-    }
-  };
-  r.readAsText(f, "UTF-8");
-  e.target.value = "";
-});
-$("pasteBtn").addEventListener("click", ()=>{
-  const open = $("pasteArea").classList.toggle("open");
-  $("pasteLoadBtn").style.display = open ? "inline-block" : "none";
-});
-$("pasteLoadBtn").addEventListener("click", ()=>{
-  const t = $("pasteArea").value;
-  const first = t.split(/\r?\n/).map(x=>x.trim()).find(x=>x) || "";
-  if(first.startsWith("読み上げ変換表")) loadYomiTable(t, "貼り付けデータ");
-  else loadDataset(parseScript(t), "貼り付けデータ");
-});
-$("yomiResetBtn").addEventListener("click", ()=>{
-  yomiRules = parseYomiTable(DEFAULT_YOMI);
-  $("importStatus").style.color = "";
-  $("importStatus").textContent = "内蔵の読み上げ変換表に戻しました(" + yomiRules.length + "件)。";
-});
-$("builtinBtn").addEventListener("click", ()=>{
-  loadSelectedBuiltin();
-});
-
-// ---------- 操作 ----------
-$("playBtn").addEventListener("click", ()=>{
-  if(!playing) start();          // 停止中 → 再生開始
-  else if(!paused) pauseNow();   // 再生中 → その場で一時停止
-  else resumeNow();              // 一時停止中 → 続きから再開
-});
-$("nextBtn").addEventListener("click", ()=>{ const was=playing; stop(); if(!order.length) return; pos=(pos+1)%order.length; renderQ(order[pos],true); if(was) start(); });
-$("prevBtn").addEventListener("click", ()=>{ const was=playing; stop(); if(!order.length) return; pos=(pos-1+order.length)%order.length; renderQ(order[pos],true); if(was) start(); });
-$("rangeSel").addEventListener("change", ()=>{ stop(); buildOrder(); if(order.length)renderQ(order[0],true); });
-$("shuffleChk").addEventListener("change", ()=>{ stop(); buildOrder(); if(order.length)renderQ(order[0],true); });
-$("pauseSel").addEventListener("change", e=> pauseSec = parseFloat(e.target.value));
-$("rateSel").addEventListener("change", e=> rate = parseFloat(e.target.value));
-$("learnedChk").addEventListener("change", e=>{
-  const idx = order[pos];
-  if(idx===undefined) return;
-  if(e.target.checked) learned.add(idx); else learned.delete(idx);
-  updateLearnedStat();
-});
-$("yabaiChk").addEventListener("change", e=>{
-  const idx = order[pos];
-  if(idx === undefined) return;
-  if(e.target.checked) yabai.add(idx); else yabai.delete(idx);
-  saveYabai(); updateLearnedStat();
-});
-$("yabaiOnlyChk").addEventListener("change", ()=>{
-  stop(); buildOrder();
-  if(order.length) renderQ(order[0], true);
-  else $("stageLabel").textContent = "ヤバイ!の付いた問題がありません";
-});
-$("resetYabai").addEventListener("click", ()=>{
-  yabai = new Set(); saveYabai();
-  stop(); buildOrder();
-  if(order.length) renderQ(order[0], true);
-  updateLearnedStat();
-});
-$("resetLearned").addEventListener("click", ()=>{
-  learned = new Set(); stop(); buildOrder();
-  if(order.length) renderQ(order[0], true);
-});
-
-
-// ---------- ヘルプ ----------
-function toggleHelp(show){
-  const ov = $("helpOverlay");
-  const open = (show === undefined) ? !ov.classList.contains("open") : show;
-  ov.classList.toggle("open", open);
-}
-$("helpBtn").addEventListener("click", ()=>toggleHelp());
-$("helpClose").addEventListener("click", ()=>toggleHelp(false));
-$("helpOverlay").addEventListener("click", e=>{ if(e.target.id === "helpOverlay") toggleHelp(false); });
-
-// ---------- ショートカットキー ----------
-// ボタンにフォーカスが残るとスペースキーで二重動作するため、クリック後にフォーカスを外す
-document.addEventListener("click", e=>{ const b = e.target.closest && e.target.closest("button"); if(b) b.blur(); });
-
-function clickToggle(id){ const el = $(id); el.checked = !el.checked; el.dispatchEvent(new Event("change")); }
-function setPauseIndex(i){ const el = $("pauseSel"); el.selectedIndex = i; el.dispatchEvent(new Event("change")); }
-function cycleRate(dir){
-  const el = $("rateSel");
-  el.selectedIndex = Math.max(0, Math.min(el.options.length - 1, el.selectedIndex + dir));
-  el.dispatchEvent(new Event("change"));
-}
-function skipToAnswer(){
-  if(playing && !paused && (phase === "question" || phase === "think")){
-    skipRequested = true;
-    try{ speechSynthesis.cancel(); }catch(e){}
-  } else if(playing && paused){
-    resumeNow();
-  }
-}
-document.addEventListener("keydown", e=>{
-  const t = e.target;
-  // 入力欄の操作中はショートカットを無効化(Escで抜けられる)
-  if(t && (t.tagName === "TEXTAREA" || t.tagName === "SELECT" ||
-     (t.tagName === "INPUT" && t.type !== "checkbox"))){
-    if(e.key === "Escape") t.blur();
-    return;
-  }
-  if(e.key === "Escape"){ toggleHelp(false); return; }
-  switch(e.key){
-    case " ":          e.preventDefault(); $("playBtn").click(); break;
-    case "ArrowLeft":  e.preventDefault(); $("prevBtn").click(); break;
-    case "ArrowRight": e.preventDefault(); $("nextBtn").click(); break;
-    case "Enter": case "a": case "A": e.preventDefault(); skipToAnswer(); break;
-    case "m": case "M": clickToggle("learnedChk"); break;
-    case "y": case "Y": clickToggle("yabaiChk"); break;
-    case "o": case "O": clickToggle("yabaiOnlyChk"); break;
-    case "s": case "S": clickToggle("shuffleChk"); break;
-    case "r": case "R": clickToggle("loopChk"); break;
-    case "e": case "E": clickToggle("echoChk"); break;
-    case "d": case "D": clickToggle("kaisetsuChk"); break;
-    case "1": setPauseIndex(0); break;
-    case "2": setPauseIndex(1); break;
-    case "3": setPauseIndex(2); break;
-    case "4": setPauseIndex(3); break;
-    case "ArrowUp":   e.preventDefault(); cycleRate(1); break;
-    case "ArrowDown": e.preventDefault(); cycleRate(-1); break;
-    case "h": case "H": case "?": toggleHelp(); break;
-  }
-});
-
-// ---------- 初期化 ----------
-(function(){
-  const groups = {};
-  let total = 0;
-  BUILTIN_SETS.forEach(function(s, i){
-    (groups[s.subj] = groups[s.subj] || []).push(i);
-    total += parseScript(s.text, "").length;
-  });
-  let h = '<option value="ALL_BUILTIN">全問題を1周（法規＋電力・' + total + '問）</option>';
-  Object.keys(groups).forEach(function(g){
-    h += '<optgroup label="' + g + '">';
-    groups[g].forEach(function(i){
-      const s = BUILTIN_SETS[i];
-      const n = parseScript(s.text, "").length;
-      h += '<option value="' + i + '">' + g + '・' + s.name + '(' + n + '問)</option>';
+  function show(i) {
+    if (!frames.length) return;
+    current = (i + frames.length) % frames.length;
+    // 地図に載せるのは表示中のコマと前後数コマだけ（拡大縮小時の読み込みを軽くする）
+    const n = frames.length;
+    const keep = new Set(playing ? [current, (current + 1) % n, (current + 2) % n] : [current]);
+    keep.forEach(k => {
+      const layer = layerFor(k);
+      if (!map.hasLayer(layer)) layer.addTo(map);
+      layer.setOpacity(k === current ? opacity : 0);
     });
-    h += '</optgroup>';
+    frames.forEach((f, k) => {
+      if (!keep.has(k) && f.layer && map.hasLayer(f.layer)) map.removeLayer(f.layer);
+    });
+    const f = frames[current];
+    $("time").textContent = fmtDate(f.time);
+    $("kind").textContent = f.future ? T("forecast") : T("observed");
+    $("kind").classList.toggle("future", f.future);
+    $("slider").value = current;
+    [...$("track").children].forEach((s, k) => s.classList.toggle("active", k === current));
+    if (isoOn) drawIsobars();
+  }
+
+  // ---------- 再生 ----------
+  const latestIndex = () => Math.max(0, frames.map(f => f.future).lastIndexOf(false));
+
+  function setFollow(on) {
+    follow = on;
+    $("live").setAttribute("aria-pressed", String(on));
+    if (on) { stop(); show(latestIndex()); }
+  }
+  // 手動でコマを動かしたら追従を解除
+  function manual(i) { setFollow(false); stop(); show(i); }
+
+  function play() {
+    setFollow(false);
+    playing = true;
+    $("play").textContent = T("pause");
+    playTimer = setInterval(() => show(current + 1), FRAME_MS);
+  }
+  function stop() {
+    playing = false;
+    $("play").textContent = T("play");
+    clearInterval(playTimer);
+  }
+
+  // ---------- 等圧線 / isobars ----------
+  // 海面気圧の格子データ(Open-Meteo)から4hPaごとの等圧線を描く。前線は描かない(自由に使えるデータがないため)
+  const ISO = { lat0: 20, lat1: 50, lon0: 118, lon1: 156, step: 2, up: 8, maxAgeMs: 60 * 60 * 1000 };
+  let isoOn = true, isoData = null, isoFetchedAt = 0, isoValid = null, isoLoading = null;
+  map.createPane("isobars");
+  map.getPane("isobars").style.zIndex = 450;
+  map.getPane("isobars").style.pointerEvents = "none";
+  const isoLayer = L.layerGroup().addTo(map);
+  const ISO_ATTR = '<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0)';
+
+  async function fetchIsobars() {
+    const nx = Math.round((ISO.lon1 - ISO.lon0) / ISO.step) + 1;
+    const ny = Math.round((ISO.lat1 - ISO.lat0) / ISO.step) + 1;
+    const lats = [], lons = [];
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      lats.push(ISO.lat0 + j * ISO.step); lons.push(ISO.lon0 + i * ISO.step);
+    }
+    const url = "https://api.open-meteo.com/v1/forecast?latitude=" + lats.join(",") +
+      "&longitude=" + lons.join(",") +
+      "&hourly=pressure_msl&past_days=1&forecast_days=3&timeformat=unixtime&timezone=GMT";
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("Open-Meteo " + r.status);
+    const j = await r.json();
+    const pts = Array.isArray(j) ? j : [j];
+    if (pts.length !== nx * ny) throw new Error("grid size mismatch");
+    const times = pts[0].hourly.time.map(t => t * 1000);
+    isoData = {
+      nx, ny, times,
+      grid: times.map((_, k) => pts.map(p => {
+        const v = p.hourly.pressure_msl[k];
+        return v == null ? NaN : v;
+      }))
+    };
+    isoFetchedAt = Date.now();
+  }
+
+  function ensureIsobars() {
+    if (isoData && Date.now() - isoFetchedAt < ISO.maxAgeMs) return Promise.resolve();
+    if (!isoLoading) {
+      isoLoading = fetchIsobars()
+        .catch(e => { console.warn(e); $("error").textContent = T("isoFail"); })
+        .finally(() => { isoLoading = null; });
+    }
+    return isoLoading;
+  }
+
+  // ---- 等圧線の計算(時刻ごとに結果を保存して、再生中は再計算しない) ----
+  const isoCache = new Map();
+
+  // Catmull-Rom 双三次補間で格子を細かくする(折れ線ではなく滑らかな面にする)
+  function upsample(v, nx, ny, U) {
+    const NX = (nx - 1) * U + 1, NY = (ny - 1) * U + 1;
+    const at = (i, j) => v[Math.min(ny - 1, Math.max(0, j)) * nx + Math.min(nx - 1, Math.max(0, i))];
+    const cr = (p0, p1, p2, p3, t) =>
+      0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
+    const g = new Float64Array(NX * NY);
+    for (let J = 0; J < NY; J++) {
+      const y = J / U, j0 = Math.min(Math.floor(y), ny - 2), ty = y - j0;
+      for (let I = 0; I < NX; I++) {
+        const x = I / U, i0 = Math.min(Math.floor(x), nx - 2), tx = x - i0;
+        const rows = [-1, 0, 1, 2].map(dj => cr(at(i0 - 1, j0 + dj), at(i0, j0 + dj), at(i0 + 1, j0 + dj), at(i0 + 2, j0 + dj), tx));
+        g[J * NX + I] = cr(rows[0], rows[1], rows[2], rows[3], ty);
+      }
+    }
+    return { g, NX, NY };
+  }
+
+  // マーチングスクエア法で求めた線分を、辺を手がかりに1本の線につなぐ
+  function contourLines(g, NX, NY, lv) {
+    const pos = new Map(), adj = new Map();
+    // 辺の交点(辺の両端は小さい番号→大きい番号の順で計算し、隣のマスと必ず同じ点になるようにする)
+    const cross = (ia, ib) => {
+      const key = ia < ib ? ia + "_" + ib : ib + "_" + ia;
+      if (!pos.has(key)) {
+        const lo = Math.min(ia, ib), hi = Math.max(ia, ib);
+        const va = g[lo] - lv, vb = g[hi] - lv, f = va / (va - vb);
+        const xa = lo % NX, ya = (lo - xa) / NX, xb = hi % NX, yb = (hi - xb) / NX;
+        pos.set(key, [xa + (xb - xa) * f, ya + (yb - ya) * f]);
+      }
+      return key;
+    };
+    const link = (a, b) => {
+      if (!adj.has(a)) adj.set(a, []);
+      if (!adj.has(b)) adj.set(b, []);
+      adj.get(a).push(b); adj.get(b).push(a);
+    };
+    for (let J = 0; J < NY - 1; J++) for (let I = 0; I < NX - 1; I++) {
+      const c = [J * NX + I, J * NX + I + 1, (J + 1) * NX + I + 1, (J + 1) * NX + I];
+      const p = c.map(k => g[k]);
+      if (p.some(isNaN)) continue;
+      const hit = [];
+      for (let e = 0; e < 4; e++) {
+        const a = c[e], b = c[(e + 1) % 4];
+        if ((g[a] < lv) !== (g[b] < lv)) hit.push(cross(a, b));
+      }
+      if (hit.length === 2) link(hit[0], hit[1]);
+      else if (hit.length === 4) {
+        // 鞍点:マスの中心の値で、どちらの組み合わせでつなぐか決める
+        const center = (p[0] + p[1] + p[2] + p[3]) / 4;
+        if ((center < lv) === (p[0] < lv)) { link(hit[0], hit[3]); link(hit[1], hit[2]); }
+        else { link(hit[0], hit[1]); link(hit[2], hit[3]); }
+      }
+    }
+    // 端点(つながりが1つの点)から順にたどり、残りは閉じた輪としてたどる
+    const used = new Set(), lines = [];
+    const walk = (start) => {
+      const line = [start]; used.add(start);
+      let cur = start;
+      for (;;) {
+        const next = (adj.get(cur) || []).find(n => !used.has(n));
+        if (!next) break;
+        line.push(next); used.add(next); cur = next;
+      }
+      const closed = line.length > 2 && (adj.get(cur) || []).includes(start);
+      lines.push({ pts: line.map(k => pos.get(k)), closed });
+    };
+    for (const [k, n] of adj) if (n.length === 1 && !used.has(k)) walk(k);
+    for (const k of adj.keys()) if (!used.has(k)) walk(k);
+    return lines;
+  }
+
+  // チャイキン法で角を丸める(閉じた線は継ぎ目も丸める)
+  function smooth(pts, closed, iter = 2) {
+    for (let t = 0; t < iter; t++) {
+      if (pts.length < 3) return pts;
+      const out = closed ? [] : [pts[0]];
+      const n = pts.length, last = closed ? n : n - 1;
+      for (let i = 0; i < last; i++) {
+        const a = pts[i], b = pts[(i + 1) % n];
+        out.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25]);
+        out.push([a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]);
+      }
+      if (!closed) out.push(pts[n - 1]);
+      pts = out;
+    }
+    return pts;
+  }
+
+  function computeIsobars(k) {
+    const key = isoFetchedAt + ":" + k;
+    if (isoCache.has(key)) return isoCache.get(key);
+    const { nx, ny } = isoData, v = isoData.grid[k];
+    const U = ISO.up;
+    const { g, NX, NY } = upsample(v, nx, ny, U);
+    const toLL = ([x, y]) => [ISO.lat0 + (y / U) * ISO.step, ISO.lon0 + (x / U) * ISO.step];
+
+    let min = Infinity, max = -Infinity;
+    for (const x of g) if (!isNaN(x)) { if (x < min) min = x; if (x > max) max = x; }
+    const thin = [], thick = [];
+    if (isFinite(min)) {
+      for (let lv = Math.ceil(min / 4) * 4; lv <= max; lv += 4) {
+        const out = lv % 20 === 0 ? thick : thin;
+        for (const ln of contourLines(g, NX, NY, lv)) {
+          const pts = smooth(ln.pts, ln.closed).map(toLL);
+          if (ln.closed) pts.push(pts[0]);
+          out.push(pts);
+        }
+      }
+    }
+
+    // 高気圧・低気圧:粗い格子で見つけ、細かい格子で中心を正確に合わせる
+    const R2 = 2, marks = [];
+    for (let j = R2; j < ny - R2; j++) for (let i = R2; i < nx - R2; i++) {
+      const c0 = v[j * nx + i];
+      if (isNaN(c0)) continue;
+      let isMax = true, isMin = true, sum = 0, n = 0;
+      for (let dj = -R2; dj <= R2; dj++) for (let di = -R2; di <= R2; di++) {
+        if (!di && !dj) continue;
+        const w = v[(j + dj) * nx + (i + di)];
+        if (isNaN(w)) { isMax = isMin = false; continue; }
+        if (w > c0) isMax = false;
+        if (w < c0) isMin = false;
+        sum += w; n++;
+      }
+      if (!(isMax || isMin) || Math.abs(c0 - sum / n) < 1) continue;
+      const kind = isMax ? "high" : "low";
+      if (marks.some(q => q.kind === kind && Math.abs(q.i - i) <= R2 && Math.abs(q.j - j) <= R2)) continue;
+      let bx = i * U, by = j * U, bv = g[by * NX + bx];
+      for (let dy = -U; dy <= U; dy++) for (let dx = -U; dx <= U; dx++) {
+        const X = i * U + dx, Y = j * U + dy, w = g[Y * NX + X];
+        if (isNaN(w)) continue;
+        if (isMax ? w > bv : w < bv) { bv = w; bx = X; by = Y; }
+      }
+      marks.push({ kind, i, j, ll: toLL([bx, by]), val: bv });
+    }
+
+    const res = { thin, thick, marks };
+    isoCache.set(key, res);
+    if (isoCache.size > 120) isoCache.delete(isoCache.keys().next().value);
+    return res;
+  }
+
+  function drawIsobars() {
+    isoLayer.clearLayers();
+    isoValid = null;
+    if (!isoOn || !isoData || !frames.length) { renderIsoInfo(); return; }
+
+    // 表示中のコマに一番近い時刻の気圧を使う
+    const t = frames[current].time.getTime();
+    let k = 0, best = Infinity;
+    isoData.times.forEach((tt, i) => { const d = Math.abs(tt - t); if (d < best) { best = d; k = i; } });
+    isoValid = new Date(isoData.times[k]);
+    const { thin, thick, marks } = computeIsobars(k);
+
+    const opt = { pane: "isobars", interactive: false, lineCap: "round", lineJoin: "round", smoothFactor: 0.5 };
+    // 下地の淡い線で、雨雲の上でも読めるようにする
+    isoLayer.addLayer(L.polyline(thin, { ...opt, color: "#FFF3D6", weight: 3, opacity: 0.7 }));
+    isoLayer.addLayer(L.polyline(thick, { ...opt, color: "#FFF3D6", weight: 4.5, opacity: 0.7 }));
+    isoLayer.addLayer(L.polyline(thin, { ...opt, color: "#385723", weight: 1.2, opacity: 0.9 }));
+    isoLayer.addLayer(L.polyline(thick, { ...opt, color: "#385723", weight: 2.4, opacity: 0.95 }));
+
+    for (const m of marks) {
+      L.marker(m.ll, {
+        pane: "isobars", interactive: false, keyboard: false,
+        icon: L.divIcon({ className: "hl " + m.kind, iconSize: [0, 0],
+          html: `<div><b>${T(m.kind)}</b><span>${Math.round(m.val)}</span></div>` })
+      }).addTo(isoLayer);
+    }
+    renderIsoInfo();
+  }
+
+  function renderIsoInfo() {
+    $("isoinfo").textContent = isoOn && isoValid ? `${T("isoLabel")} ${fmtDate(isoValid)}` : "";
+  }
+
+  function isoLegendHtml() {
+    if (!isoOn) return "";
+    return `<div class="iso"><span class="unit">${T("isoLabel")}（hPa）</span>` +
+      `<div><i class="thin"></i>${T("isoEvery")}</div>` +
+      `<div><i></i>${T("isoThick")}</div>` +
+      `<div><b>${T("high")}</b>／<b style="color:var(--volt-deep)">${T("low")}</b></div></div>`;
+  }
+
+  async function setIsobars(on) {
+    isoOn = on;
+    $("isobar").setAttribute("aria-pressed", String(on));
+    try { localStorage.setItem("radar-iso", on ? "1" : "0"); } catch (e) { /* 保存できなくても動く */ }
+    if (on) {
+      map.attributionControl.addAttribution(ISO_ATTR);
+      await ensureIsobars();
+    } else {
+      map.attributionControl.removeAttribution(ISO_ATTR);
+    }
+    renderLegend(lastLegend, lastLegendLink);
+    drawIsobars();
+  }
+  $("isobar").addEventListener("click", () => setIsobars(!isoOn));
+
+  // ---------- 天気図 / weather chart ----------
+  const WMAP = "https://www.jma.go.jp/bosai/weather_map/data/";
+  let wmList = null, wmFetchedAt = 0, wmKind = "now", wmArea = "near", wmIndex = -1, wmFile = "";
+  const dlg = $("chart");
+
+  async function loadChartList(force = false) {
+    if (!force && wmList && Date.now() - wmFetchedAt < 60 * 1000) return;
+    const r = await fetch(WMAP + "list.json?_=" + Date.now());
+    if (!r.ok) throw new Error(r.status);
+    const prevList = wmList;
+    wmList = await r.json();
+    wmFetchedAt = Date.now();
+    // 最新の図を見ていたら最新へ、過去の図を見ていたら同じ図のまま / follow the newest only if it was shown
+    const arr = wmList?.[wmArea]?.[wmKind] || [];
+    const prevArr = prevList?.[wmArea]?.[wmKind] || [];
+    const wasLatest = !prevList || wmIndex < 0 || wmIndex >= prevArr.length - 1;
+    const keep = arr.indexOf(wmFile);
+    wmIndex = wasLatest || keep < 0 ? -1 : keep;
+    renderChartUpdated();
+  }
+
+  function renderChartUpdated() {
+    $("chart-updated").textContent = wmFetchedAt ? `${T("updated")} ${fmt(new Date(wmFetchedAt))}` : "";
+  }
+
+  // 自動更新のたびに呼ぶ(窓を開いているときだけ) / called on every auto-refresh while open
+  async function refreshChart() {
+    if (!dlg.open) return;
+    try { await loadChartList(true); renderChart(); }
+    catch (e) { console.warn(e); }
+  }
+
+  function renderChart() {
+    const arr = wmList?.[wmArea]?.[wmKind] || [];
+    const img = $("chart-img");
+    renderChartUpdated();
+    dlg.querySelectorAll("[data-kind]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === wmKind)));
+    dlg.querySelectorAll("[data-area]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.area === wmArea)));
+    if (!arr.length) {
+      $("chart-caption").textContent = T("chartNone");
+      img.removeAttribute("src"); img.alt = T("chartNone");
+      $("chart-prev").disabled = $("chart-next").disabled = true;
+      return;
+    }
+    if (wmKind !== "now" || wmIndex < 0 || wmIndex >= arr.length) wmIndex = arr.length - 1;
+    const file = arr[wmIndex];
+    wmFile = file;
+    const m = file.match(/_C_010000_(\d{14})_/);
+    const base = m ? parseJmaTime(m[1]) : null;
+    const hours = wmKind === "ft24" ? 24 : wmKind === "ft48" ? 48 : 0;
+    let caption = "";
+    if (base) {
+      const valid = new Date(base.getTime() + hours * 3600 * 1000);
+      caption = hours ? TEXT.chartFt[lang](fmtDate(valid), hours) : TEXT.chartNow[lang](fmtDate(valid));
+    }
+    $("chart-caption").textContent = caption;
+    img.alt = TEXT.chartAlt[lang](wmArea === "near" ? T("areaNear") : T("areaAsia"), caption);
+    img.src = WMAP + "png/" + file;
+    $("chart-prev").disabled = wmKind !== "now" || wmIndex <= 0;
+    $("chart-next").disabled = wmKind !== "now" || wmIndex >= arr.length - 1;
+  }
+
+  // 位置は画面内に収める / keep the window on screen
+  function placeChart(x, y) {
+    const w = dlg.offsetWidth, h = dlg.offsetHeight;
+    x = Math.min(Math.max(0, x), Math.max(0, window.innerWidth - w));
+    y = Math.min(Math.max(0, y), Math.max(0, window.innerHeight - Math.min(h, 60)));   // 見出しは必ず画面内に残す
+    dlg.style.left = x + "px"; dlg.style.top = y + "px";
+    try { localStorage.setItem("radar-chart-pos", JSON.stringify([x, y])); } catch (e) { /* 保存できなくても動く */ }
+  }
+
+  // ドラッグで移動 / drag by the header
+  (() => {
+    const handle = $("chart-handle");
+    let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
+    handle.addEventListener("pointerdown", e => {
+      if (e.target.closest("button")) return;
+      dragging = true; handle.setPointerCapture(e.pointerId);
+      const r = dlg.getBoundingClientRect();
+      sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+      dlg.classList.add("dragging");
+    });
+    handle.addEventListener("pointermove", e => {
+      if (dragging) placeChart(ox + e.clientX - sx, oy + e.clientY - sy);
+    });
+    const end = () => { dragging = false; dlg.classList.remove("dragging"); };
+    handle.addEventListener("pointerup", end);
+    handle.addEventListener("pointercancel", end);
+    // キーボードでも動かせる(操作の3原則) / keyboard move
+    handle.addEventListener("keydown", e => {
+      const step = e.shiftKey ? 50 : 10;
+      const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      const r = dlg.getBoundingClientRect();
+      placeChart(r.left + d[0], r.top + d[1]);
+    });
+    window.addEventListener("resize", () => {
+      if (dlg.open) { const r = dlg.getBoundingClientRect(); placeChart(r.left, r.top); }
+    });
+  })();
+
+  async function openChart() {
+    if (!dlg.open) {
+      dlg.show();                       // 地図を操作できるよう、画面をふさがない形で開く
+      let pos = null;
+      try { pos = JSON.parse(localStorage.getItem("radar-chart-pos")); } catch (e) { /* 既定の位置 */ }
+      if (pos) placeChart(pos[0], pos[1]);
+      else if (window.innerWidth < 520) placeChart(10, 10);
+      else {
+        // 初めて開くときは、操作パネルと凡例をふさがない右上に置く
+        const lg = $("legend").getBoundingClientRect();
+        let x = (lg.width ? lg.left : window.innerWidth) - dlg.offsetWidth - 10;
+        if (x < 60) x = window.innerWidth - dlg.offsetWidth - 10;
+        placeChart(x, 10);
+      }
+      $("chart-handle").focus();
+    }
+    try { await loadChartList(); }
+    catch (e) { console.warn(e); }
+    renderChart();
+  }
+  $("chartbtn").addEventListener("click", () => {
+    if (dlg.open) { dlg.close(); return; }     // もう一度押すと閉じる
+    openChart().then(() => $("chartbtn").setAttribute("aria-expanded", "true"));
   });
-  $("setSel").innerHTML = h;
-  // 従来どおり最初は「法規・距離」を表示し、全問題モードは選択肢から利用する。
-  $("setSel").value = "0";
+  $("chart-close").addEventListener("click", () => dlg.close());
+  dlg.addEventListener("keydown", e => { if (e.key === "Escape") { e.preventDefault(); dlg.close(); $("chartbtn").focus(); } });
+  $("chartbtn").setAttribute("aria-expanded", "false");
+  dlg.addEventListener("close", () => $("chartbtn").setAttribute("aria-expanded", "false"));
+  dlg.querySelectorAll("[data-kind]").forEach(b => b.addEventListener("click", () => { wmKind = b.dataset.kind; wmIndex = -1; renderChart(); }));
+  dlg.querySelectorAll("[data-area]").forEach(b => b.addEventListener("click", () => { wmArea = b.dataset.area; wmIndex = -1; renderChart(); }));
+  $("chart-prev").addEventListener("click", () => { wmIndex--; renderChart(); });
+  $("chart-next").addEventListener("click", () => { wmIndex++; renderChart(); });
+
+  // ---------- 現在位置 / my position ----------
+  // watchPositionで動きに追従する。位置は端末内でのみ使い、どこにも送らない
+  let geoOn = false, geoWatch = null, geoMarker = null, geoCircle = null, geoLast = null;
+  map.createPane("mypos");
+  map.getPane("mypos").style.zIndex = 620;
+  map.getPane("mypos").style.pointerEvents = "none";
+
+  function renderGeoInfo() {
+    if (!geoOn) { $("geoinfo").textContent = ""; return; }
+    const acc = geoLast && geoLast.coords.accuracy;
+    $("geoinfo").textContent = !geoLast ? T("geoWait")
+      : acc >= 1 ? TEXT.geoAcc[lang](Math.round(acc))   // 誤差が分かるときだけ数値を添える
+      : T("hereLabel");
+  }
+
+  function drawMyPosition(pan) {
+    if (!geoLast) return;
+    const ll = [geoLast.coords.latitude, geoLast.coords.longitude];
+    const acc = geoLast.coords.accuracy || 0;
+    if (!geoMarker) {
+      geoCircle = L.circle(ll, { pane: "mypos", interactive: false, radius: acc,
+        color: "#8C1B0D", weight: 1.5, opacity: 0.8, fillColor: "#B92613", fillOpacity: 0.1 }).addTo(map);
+      geoMarker = L.marker(ll, { pane: "mypos", interactive: false, keyboard: false,
+        icon: L.divIcon({ className: "me", iconSize: [0, 0], html: "" }) }).addTo(map);
+    } else {
+      geoMarker.setLatLng(ll);
+      geoCircle.setLatLng(ll).setRadius(acc);
+    }
+    // 印には必ず文字を添える / the dot always carries a label
+    geoMarker.getElement().innerHTML = `<div><i></i><span>${T("hereLabel")}</span></div>`;
+    if (pan) map.setView(ll, Math.max(map.getZoom(), 10));
+    renderGeoInfo();
+  }
+
+  function clearMyPosition() {
+    if (geoMarker) { map.removeLayer(geoMarker); geoMarker = null; }
+    if (geoCircle) { map.removeLayer(geoCircle); geoCircle = null; }
+  }
+
+  function setGeo(on, pan = true) {
+    geoOn = on;
+    $("geo").setAttribute("aria-pressed", String(on));
+    try { localStorage.setItem("radar-geo", on ? "1" : "0"); } catch (e) { /* 保存できなくても動く */ }
+    if (!on) {
+      if (geoWatch !== null) { navigator.geolocation.clearWatch(geoWatch); geoWatch = null; }
+      clearMyPosition();
+      renderGeoInfo();
+      return;
+    }
+    if (!navigator.geolocation) { $("error").textContent = T("noGeo"); setGeo(false); return; }
+    renderGeoInfo();
+    let first = pan;
+    geoWatch = navigator.geolocation.watchPosition(
+      pos => { geoLast = pos; drawMyPosition(first); first = false; $("error").textContent = ""; },
+      err => {
+        $("error").textContent = err.code === err.PERMISSION_DENIED ? T("geoDenied") : T("geoFail");
+        if (err.code === err.PERMISSION_DENIED) setGeo(false);
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 }
+    );
+  }
+  $("geo").addEventListener("click", () => setGeo(!geoOn));
+
+  // ---------- 自動更新 ----------
+  async function refresh() {
+    $("error").textContent = "";
+    refreshChart();
+    if (isoOn) ensureIsobars().then(drawIsobars);
+    let data;
+    const key = $("layer").value;
+    try {
+      data = await loadJma(key);
+    } catch (e1) {
+      console.warn("気象庁の取得に失敗:", e1);
+      try {
+        if (key !== "raincloud") throw e1;   // 予備データは雨雲だけ
+        data = await loadRainViewer();
+      } catch (e2) {
+        console.error("RainViewerの取得にも失敗:", e2);
+        $("error").textContent = T("failLoad");
+        scheduleNext();
+        return;
+      }
+    }
+    await buildFrames(data);
+    lastUpdatedAt = new Date();
+    renderUpdated();
+    scheduleNext();
+  }
+
+  function scheduleNext() {
+    clearTimeout(refreshTimer);
+    const sec = +$("interval").value;
+    nextRefreshAt = Date.now() + sec * 1000;
+    refreshTimer = setTimeout(refresh, sec * 1000);
+  }
+
+  function tickCountdown() {
+    const s = Math.max(0, Math.round((nextRefreshAt - Date.now()) / 1000));
+    $("countdown").textContent = nextRefreshAt ? `${T("next")} ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
+  }
+
+  // ---------- イベント ----------
+  $("collapse").addEventListener("click", () => {
+    const collapsed = $("panel").classList.toggle("collapsed");
+    $("collapse").textContent = collapsed ? "▲" : "▼";
+    $("collapse").setAttribute("aria-expanded", String(!collapsed));
+    $("collapse").setAttribute("aria-label", collapsed ? T("expand") : T("collapse"));
+  });
+  $("settings").addEventListener("click", () => {
+    const open = $("opts").hidden;
+    $("opts").hidden = !open;
+    $("settings").setAttribute("aria-pressed", String(open));
+  });
+  $("play").addEventListener("click", () => playing ? stop() : play());
+  // ---------- 日英切り替え / language switch ----------
+  function setLang(next) {
+    lang = next;
+    document.documentElement.lang = lang;
+    document.querySelectorAll("[data-ja]").forEach(el => { el.textContent = el.dataset[lang]; });
+    document.querySelectorAll("[data-ja-title]").forEach(el => { el.title = el.dataset[lang + "Title"]; });
+    document.querySelectorAll("[data-ja-label]").forEach(el => {
+      const v = el.dataset[lang + "Label"];
+      if (el.tagName === "OPTGROUP") el.label = v; else el.setAttribute("aria-label", v);
+    });
+    $("play").textContent = playing ? T("pause") : T("play");
+    $("collapse").setAttribute("aria-label", $("panel").classList.contains("collapsed") ? T("expand") : T("collapse"));
+    renderSource();
+    renderUpdated();
+    renderLegend(lastLegend, lastLegendLink);
+    if (isoOn) drawIsobars();
+    if (geoOn) { if (geoLast) drawMyPosition(false); else renderGeoInfo(); }
+    if (dlg.open) { renderChart(); renderChartUpdated(); }
+    renderTrack(lastNowIdx);
+    if (frames.length) show(current); else $("time").textContent = T("loading");
+    try { localStorage.setItem("radar-lang", lang); } catch (e) { /* file:// では保存できないことがある */ }
+  }
+  $("lang").addEventListener("click", () => setLang(lang === "ja" ? "en" : "ja"));
+
+  // 起動時の言語:前回の選択 → ブラウザの設定 → 日本語
+  (() => {
+    let start = null;
+    try { start = localStorage.getItem("radar-lang"); } catch (e) { /* 読めなければ既定値 */ }
+    if (!start) start = (navigator.language || "ja").toLowerCase().startsWith("ja") ? "ja" : "en";
+    if (start === "en") setLang("en");
+  })();
+
+  $("live").addEventListener("click", () => setFollow(!follow));
+  $("prev").addEventListener("click", () => { manual(current - 1); });
+  $("next").addEventListener("click", () => { manual(current + 1); });
+  $("slider").addEventListener("input", e => { manual(+e.target.value); });
+  $("opacity").addEventListener("input", e => { opacity = +e.target.value; show(current); });
+  $("interval").addEventListener("change", scheduleNext);
+  $("layer").addEventListener("change", () => {
+    frames.forEach(f => f.layer && map.removeLayer(f.layer));
+    frames = [];
+    imgCache.clear();
+    $("time").textContent = T("loading");
+    setFollow(true);
+    refresh();
+  });
+  $("refresh").addEventListener("click", refresh);
+  $("locate").addEventListener("click", () => {
+    if (!geoOn) { setGeo(true); return; }                  // 表示が消えていれば、まず表示を入れる
+    if (geoLast) drawMyPosition(true);
+    else renderGeoInfo();
+  });
+  document.addEventListener("keydown", e => {
+    if (!$("keys").checked) return;                       // 設定で無効にできる / can be switched off
+    if (dlg.contains(e.target)) return;                    // 天気図の窓を操作中は、地図のショートカットを使わない
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+    if (e.key === "ArrowLeft") { manual(current - 1); }
+    if (e.key === "ArrowRight") { manual(current + 1); }
+    if (e.key === " ") { e.preventDefault(); playing ? stop() : play(); }
+  });
+  // タブが非表示から戻ったら即更新
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && Date.now() > nextRefreshAt - 5000) refresh();
+  });
+
+  setInterval(tickCountdown, 1000);
+
+  // 起動時:等圧線は既定で表示。現在地は前回の選択に従う(位置情報は勝手に取らない)
+  (() => {
+    let iso = null, geo = null;
+    try { iso = localStorage.getItem("radar-iso"); geo = localStorage.getItem("radar-geo"); } catch (e) { /* 既定値 */ }
+    setIsobars(iso !== "0");
+    if (geo === "1") setGeo(true, false);
+  })();
+
+  refresh();
 })();
-$("setSel").addEventListener("change", loadSelectedBuiltin);
-loadBuiltinSet(0);
 </script>
 </body>
 </html>
